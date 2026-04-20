@@ -127,6 +127,19 @@ class Game {
         this.gameLoop = null;
     }
 
+    reset() {
+        // 停止当前游戏
+        this.stop();
+
+        // 重置游戏状态
+        this.gameState = 'playing';
+
+        // 重新初始化游戏
+        this.initializeGame();
+
+        console.log('游戏重置完成');
+    }
+
     update() {
         // 更新玩家
         this.player.update();
