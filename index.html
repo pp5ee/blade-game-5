@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>转刀刀 - Knife Throwing Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #1a1a2e;
+            color: #e6e6e6;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .game-header {
+            text-align: center;
+            padding: 10px;
+            background: #16213e;
+            border: 2px solid #0f3460;
+            border-radius: 8px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #e94560;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 0 #000;
+            margin-bottom: 10px;
+        }
+
+        .game-description {
+            color: #8d93ab;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        #game-canvas {
+            border: 4px solid #0f3460;
+            border-radius: 4px;
+            background-color: #0d1930;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        .game-ui {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+            background: #16213e;
+            padding: 15px;
+            border: 2px solid #0f3460;
+            border-radius: 8px;
+        }
+
+        .stat-panel {
+            background: #1a1a2e;
+            padding: 10px;
+            border: 1px solid #e94560;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #8d93ab;
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            color: #e94560;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .knife-counts {
+            display: flex;
+            justify-content: space-around;
+            gap: 5px;
+        }
+
+        .knife-count {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .knife-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-bottom: 5px;
+        }
+
+        .red { background-color: #e94560; }
+        .yellow { background-color: #ffd166; }
+        .blue { background-color: #118ab2; }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #d63447;
+        }
+
+        button:disabled {
+            background: #8d93ab;
+            cursor: not-allowed;
+        }
+
+        .instructions {
+            background: #16213e;
+            padding: 15px;
+            border: 2px solid #0f3460;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .instructions h3 {
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+
+        .instructions ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .instructions li {
+            margin-bottom: 5px;
+            color: #8d93ab;
+        }
+
+        .game-status {
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .status-playing { background: #118ab2; color: white; }
+        .status-game-over { background: #e94560; color: white; }
+        .status-won { background: #06d6a0; color: white; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <h1>转刀刀</h1>
+            <div class="game-description">
+                收集刀，击败NPC，成为最强大的刀手！
+            </div>
+        </div>
+
+        <canvas id="game-canvas" width="800" height="600"></canvas>
+
+        <div class="game-ui">
+            <div class="stat-panel">
+                <div class="stat-label">游戏状态</div>
+                <div id="game-status" class="stat-value">准备开始</div>
+            </div>
+
+            <div class="stat-panel">
+                <div class="stat-label">你的刀</div>
+                <div class="knife-counts">
+                    <div class="knife-count">
+                        <div class="knife-color red"></div>
+                        <span id="red-knives">0</span>
+                    </div>
+                    <div class="knife-count">
+                        <div class="knife-color yellow"></div>
+                        <span id="yellow-knives">0</span>
+                    </div>
+                    <div class="knife-count">
+                        <div class="knife-color blue"></div>
+                        <span id="blue-knives">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-panel">
+                <div class="stat-label">操作</div>
+                <div class="controls">
+                    <button id="start-btn">开始游戏</button>
+                    <button id="restart-btn" disabled>重新开始</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>游戏说明</h3>
+            <ul>
+                <li>• 使用方向键移动角色</li>
+                <li>• 收集红色、黄色、蓝色三种刀</li>
+                <li>• 红色刀伤害最高（红=黄×2=蓝×4）</li>
+                <li>• NPC会主动攻击你</li>
+                <li>• 击败NPC获得他们收集的刀</li>
+                <li>• 地图随机生成，每次游戏都不同</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="src/game/Game.js"></script>
+    <script src="src/entities/Player.js"></script>
+    <script src="src/entities/NPC.js"></script>
+    <script src="src/map/MapGenerator.js"></script>
+    <script src="src/combat/CombatSystem.js"></script>
+    <script src="src/ui/GameUI.js"></script>
+    <script src="src/main.js"></script>
+</body>
+</html>
