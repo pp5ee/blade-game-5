@@ -1,0 +1,35 @@
+{
+  "name": "knife-throwing-game",
+  "version": "1.1.0",
+  "description": "转刀刀 - 一个基于HTML5 Canvas的单机网页游戏，玩家控制角色在随机生成的地图上收集不同颜色的刀，与主动攻击的NPC进行战斗",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "serve": "npx http-server . -p 8080",
+    "test": "echo \"打开 tests/test-functionality.html 进行功能测试\" && exit 0"
+  },
+  "keywords": [
+    "html5",
+    "canvas",
+    "game",
+    "javascript",
+    "pixel-art",
+    "single-player"
+  ],
+  "author": "游戏开发团队",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/username/knife-throwing-game.git"
+  },
+  "homepage": "./",
+  "devDependencies": {},
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ],
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
