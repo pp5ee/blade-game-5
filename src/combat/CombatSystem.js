@@ -8,9 +8,12 @@ class CombatSystem {
                 yellow: 2, // 黄色刀伤害倍率
                 blue: 1    // 蓝色刀伤害倍率
             },
-            baseDamage: 1, // 基础伤害值
+            baseDamage: 0.5, // 基础伤害值调整为0.5，使伤害计算更平滑
             criticalChance: 0.1, // 暴击概率
-            criticalMultiplier: 2 // 暴击倍率
+            criticalMultiplier: 2, // 暴击倍率
+            damageDecayFactor: 0.9, // 伤害衰减系数（每增加一把刀，边际伤害减少10%）
+            maxKnivesForDecay: 10, // 伤害衰减的最大刀数量限制
+            minDamageMultiplier: 0.3 // 最小伤害倍率
         };
     }
 
@@ -57,16 +60,23 @@ class CombatSystem {
         };
     }
 
-    // 计算实体攻击力
+    // 计算实体攻击力（带伤害衰减）
     calculateAttackPower(entity) {
         let totalPower = 0;
+        const totalKnives = entity.getTotalKnives();
+
+        // 计算伤害衰减因子
+        const decayFactor = this.calculateDecayFactor(totalKnives);
 
         // 根据刀颜色计算攻击力
         for (const color in entity.knives) {
             if (entity.knives.hasOwnProperty(color)) {
                 const count = entity.knives[color];
                 const multiplier = this.config.damageMultipliers[color] || 1;
-                totalPower += count * multiplier * this.config.baseDamage;
+                
+                // 应用伤害衰减
+                const colorPower = count * multiplier * this.config.baseDamage * decayFactor;
+                totalPower += colorPower;
             }
         }
 
@@ -75,7 +85,21 @@ class CombatSystem {
             return 0;
         }
 
-        return totalPower;
+        return Math.round(totalPower * 10) / 10; // 保留一位小数
+    }
+
+    // 计算伤害衰减因子
+    calculateDecayFactor(totalKnives) {
+        if (totalKnives <= 1) {
+            return 1.0; // 第一把刀没有衰减
+        }
+
+        // 指数衰减：每增加一把刀，边际伤害减少
+        const knivesForDecay = Math.min(totalKnives - 1, this.config.maxKnivesForDecay);
+        const decayFactor = Math.pow(this.config.damageDecayFactor, knivesForDecay);
+        
+        // 确保最小伤害倍率
+        return Math.max(decayFactor, this.config.minDamageMultiplier);
     }
 
     // 计算实际伤害
@@ -87,15 +111,16 @@ class CombatSystem {
         // 基础伤害计算
         let damage = attackerPower;
 
-        // 防御力减免（简单的线性减免）
-        const defenseReduction = Math.min(defenderPower * 0.1, damage * 0.5);
+        // 防御力减免（基于双方力量对比的曲线减免）
+        const powerRatio = defenderPower / (attackerPower + defenderPower);
+        const defenseReduction = damage * (0.1 + powerRatio * 0.3); // 10%-40%的减免
         damage -= defenseReduction;
 
         // 确保伤害至少为1
         damage = Math.max(1, damage);
 
-        // 随机波动（±10%）
-        const randomFactor = 0.9 + Math.random() * 0.2;
+        // 随机波动（±15%）
+        const randomFactor = 0.85 + Math.random() * 0.3;
         damage = Math.round(damage * randomFactor);
 
         return damage;
@@ -116,7 +141,8 @@ class CombatSystem {
             red: this.config.damageMultipliers.red,
             yellow: this.config.damageMultipliers.yellow,
             blue: this.config.damageMultipliers.blue,
-            baseDamage: this.config.baseDamage
+            baseDamage: this.config.baseDamage,
+            decayFactor: this.config.damageDecayFactor
         };
     }
 
