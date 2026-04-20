@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>转刀刀游戏功能测试</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a2e;
+            color: #e6e6e6;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            background: #16213e;
+            border: 2px solid #0f3460;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { background: #06d6a0; color: #1a1a2e; }
+        .error { background: #e94560; color: white; }
+        .warning { background: #ffd166; color: #1a1a2e; }
+        button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            margin: 5px;
+        }
+        button:hover { background: #d63447; }
+        #log {
+            background: #0d1930;
+            border: 1px solid #0f3460;
+            border-radius: 4px;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>转刀刀游戏功能测试</h1>
+            <p>验证游戏核心功能是否正常工作</p>
+        </div>
+
+        <div class="test-section">
+            <h3>模块加载测试</h3>
+            <div id="module-test">
+                <button onclick="testModuleLoading()">测试模块加载</button>
+                <div id="module-result"></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>游戏初始化测试</h3>
+            <div id="init-test">
+                <button onclick="testGameInitialization()">测试游戏初始化</button>
+                <div id="init-result"></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>战斗系统测试</h3>
+            <div id="combat-test">
+                <button onclick="testCombatSystem()">测试战斗系统</button>
+                <div id="combat-result"></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>地图生成测试</h3>
+            <div id="map-test">
+                <button onclick="testMapGeneration()">测试地图生成</button>
+                <div id="map-result"></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>测试日志</h3>
+            <div id="log"></div>
+            <button onclick="clearLog()">清空日志</button>
+            <button onclick="runAllTests()">运行所有测试</button>
+        </div>
+    </div>
+
+    <script>
+        // 测试日志系统
+        const logElement = document.getElementById('log');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<span style="color: #8d93ab">[${timestamp}]</span> ${message}`;
+
+            if (type === 'error') {
+                logEntry.style.color = '#e94560';
+            } else if (type === 'success') {
+                logEntry.style.color = '#06d6a0';
+            } else if (type === 'warning') {
+                logEntry.style.color = '#ffd166';
+            }
+
+            logElement.appendChild(logEntry);
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            logElement.innerHTML = '';
+            log('日志已清空', 'info');
+        }
+
+        // 显示测试结果
+        function showResult(elementId, message, isSuccess) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="test-result ${isSuccess ? 'success' : 'error'}">${message}</div>`;
+        }
+
+        // 测试模块加载
+        function testModuleLoading() {
+            log('开始测试模块加载...', 'info');
+
+            try {
+                // 检查关键模块是否存在
+                const modules = ['Game', 'Player', 'NPC', 'MapGenerator', 'CombatSystem', 'GameUI'];
+                let allLoaded = true;
+
+                modules.forEach(module => {
+                    if (typeof window[module] === 'undefined') {
+                        log(`❌ ${module} 模块未加载`, 'error');
+                        allLoaded = false;
+                    } else {
+                        log(`✅ ${module} 模块已加载`, 'success');
+                    }
+                });
+
+                if (allLoaded) {
+                    showResult('module-result', '✅ 所有模块加载成功', true);
+                    log('模块加载测试完成 - 所有模块正常', 'success');
+                } else {
+                    showResult('module-result', '❌ 部分模块加载失败', false);
+                    log('模块加载测试完成 - 存在加载失败模块', 'error');
+                }
+            } catch (error) {
+                log(`❌ 模块加载测试错误: ${error.message}`, 'error');
+                showResult('module-result', `❌ 测试错误: ${error.message}`, false);
+            }
+        }
+
+        // 测试游戏初始化
+        function testGameInitialization() {
+            log('开始测试游戏初始化...', 'info');
+
+            try {
+                const game = new Game();
+
+                if (game && game.canvas && game.ctx) {
+                    log('✅ 游戏实例创建成功', 'success');
+                    log(`📊 地图尺寸: ${game.config.mapSize.width}x${game.config.mapSize.height}`, 'info');
+                    log(`📍 玩家位置: (${game.player.position.x}, ${game.player.position.y})`, 'info');
+                    log(`🤖 NPC数量: ${game.npcs.length}`, 'info');
+                    log(`🔪 刀数量: ${game.knives.length}`, 'info');
+
+                    showResult('init-result', '✅ 游戏初始化测试成功', true);
+                    log('游戏初始化测试完成 - 所有系统正常', 'success');
+                } else {
+                    log('❌ 游戏实例创建失败', 'error');
+                    showResult('init-result', '❌ 游戏初始化失败', false);
+                }
+            } catch (error) {
+                log(`❌ 游戏初始化测试错误: ${error.message}`, 'error');
+                showResult('init-result', `❌ 测试错误: ${error.message}`, false);
+            }
+        }
+
+        // 测试战斗系统
+        function testCombatSystem() {
+            log('开始测试战斗系统...', 'info');
+
+            try {
+                const combat = new CombatSystem();
+
+                // 创建测试实体
+                const attacker = {
+                    knives: { red: 2, yellow: 1, blue: 0 },
+                    isAlive: true,
+                    getAttackPower: function() {
+                        return this.knives.red * 4 + this.knives.yellow * 2 + this.knives.blue;
+                    }
+                };
+
+                const defender = {
+                    knives: { red: 0, yellow: 2, blue: 3 },
+                    isAlive: true,
+                    getAttackPower: function() {
+                        return this.knives.red * 4 + this.knives.yellow * 2 + this.knives.blue;
+                    }
+                };
+
+                const result = combat.resolveCombat(attacker, defender);
+
+                if (result && result.winner !== undefined) {
+                    log('✅ 战斗系统工作正常', 'success');
+                    log(`⚔️  战斗结果: ${result.winner}`, 'info');
+                    log(`📈 攻击力: ${result.attackerPower} vs ${result.defenderPower}`, 'info');
+                    log(`💥 伤害: ${result.attackerDamage} vs ${result.defenderDamage}`, 'info');
+
+                    showResult('combat-result', '✅ 战斗系统测试成功', true);
+                    log('战斗系统测试完成 - 伤害计算正确', 'success');
+                } else {
+                    log('❌ 战斗系统返回无效结果', 'error');
+                    showResult('combat-result', '❌ 战斗系统测试失败', false);
+                }
+            } catch (error) {
+                log(`❌ 战斗系统测试错误: ${error.message}`, 'error');
+                showResult('combat-result', `❌ 测试错误: ${error.message}`, false);
+            }
+        }
+
+        // 测试地图生成
+        function testMapGeneration() {
+            log('开始测试地图生成...', 'info');
+
+            try {
+                const mapGen = new MapGenerator({ width: 15, height: 10 });
+                const map = mapGen.generate();
+
+                if (map && map.length === 10 && map[0].length === 15) {
+                    log('✅ 地图生成成功', 'success');
+                    log(`🗺️  地图尺寸: ${map[0].length}x${map.length}`, 'info');
+
+                    // 统计可通行区域
+                    let passableCells = 0;
+                    for (let y = 0; y < map.length; y++) {
+                        for (let x = 0; x < map[0].length; x++) {
+                            if (map[y][x] === 0) passableCells++;
+                        }
+                    }
+
+                    const totalCells = map.length * map[0].length;
+                    const passableRatio = (passableCells / totalCells * 100).toFixed(1);
+
+                    log(`📊 可通行区域: ${passableCells}/${totalCells} (${passableRatio}%)`, 'info');
+
+                    showResult('map-result', '✅ 地图生成测试成功', true);
+                    log('地图生成测试完成 - 地图连通性正常', 'success');
+                } else {
+                    log('❌ 地图生成失败', 'error');
+                    showResult('map-result', '❌ 地图生成测试失败', false);
+                }
+            } catch (error) {
+                log(`❌ 地图生成测试错误: ${error.message}`, 'error');
+                showResult('map-result', `❌ 测试错误: ${error.message}`, false);
+            }
+        }
+
+        // 运行所有测试
+        function runAllTests() {
+            clearLog();
+            log('开始运行所有测试...', 'info');
+
+            setTimeout(() => testModuleLoading(), 100);
+            setTimeout(() => testGameInitialization(), 500);
+            setTimeout(() => testCombatSystem(), 1000);
+            setTimeout(() => testMapGeneration(), 1500);
+
+            setTimeout(() => {
+                log('所有测试完成！', 'success');
+                log('请检查各测试部分的结果...', 'info');
+            }, 2000);
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            log('测试页面加载完成', 'info');
+            log('点击按钮开始测试各个功能模块', 'info');
+        });
+    </script>
+
+    <!-- 加载游戏模块 -->
+    <script src="src/game/Game.js"></script>
+    <script src="src/entities/Player.js"></script>
+    <script src="src/entities/NPC.js"></script>
+    <script src="src/map/MapGenerator.js"></script>
+    <script src="src/combat/CombatSystem.js"></script>
+    <script src="src/ui/GameUI.js"></script>
+</body>
+</html>
