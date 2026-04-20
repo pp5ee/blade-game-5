@@ -22,7 +22,8 @@ class Game {
             maxNPCs: 5,
             maxKnives: 15,
             npcSpawnRate: 0.3,
-            knifeSpawnRate: 0.6
+            knifeSpawnRate: 0.6,
+            debugMode: false // 性能调试模式
         };
 
         // 初始化游戏
@@ -108,18 +109,37 @@ class Game {
 
         this.isRunning = true;
         this.gameState = 'playing';
+        this.lastFrameTime = performance.now();
+        this.fps = 0;
+        this.frameCount = 0;
+        this.lastFpsUpdate = 0;
 
-        const gameLoop = () => {
+        const gameLoop = (currentTime) => {
             if (!this.isRunning) return;
 
-            this.update();
-            this.render();
+            // 控制帧率 - 确保稳定60FPS
+            const deltaTime = currentTime - this.lastFrameTime;
+            const minFrameTime = 1000 / 60; // 16.67ms per frame for 60FPS
+
+            if (deltaTime < minFrameTime) {
+                requestAnimationFrame(gameLoop);
+                return;
+            }
+
+            this.lastFrameTime = currentTime;
+
+            // 更新性能统计
+            this.updatePerformanceStats(currentTime);
+
+            // 优化更新：使用性能优化的更新方法
+            this.optimizedUpdate();
+            this.optimizedRender();
 
             requestAnimationFrame(gameLoop);
         };
 
         this.gameLoop = gameLoop;
-        gameLoop();
+        requestAnimationFrame(gameLoop);
     }
 
     stop() {
@@ -138,6 +158,132 @@ class Game {
         this.initializeGame();
 
         console.log('游戏重置完成');
+    }
+
+    // 性能优化方法
+    optimizedUpdate() {
+        // 更新玩家
+        this.player.update();
+
+        // 优化NPC更新：减少不必要的计算
+        this.npcs.forEach(npc => {
+            if (npc.isAlive) {
+                // 简单的距离检查，避免更新太远的NPC
+                const distanceToPlayer = Math.abs(npc.position.x - this.player.position.x) +
+                                       Math.abs(npc.position.y - this.player.position.y);
+
+                if (distanceToPlayer <= 10) { // 只更新距离玩家10格以内的NPC
+                    npc.update();
+                }
+            }
+        });
+
+        // 优化碰撞检测
+        this.optimizedCheckCollisions();
+        this.checkCombat();
+        this.checkGameEnd();
+    }
+
+    optimizedCheckCollisions() {
+        // 玩家收集刀 - 优化检查逻辑
+        const playerX = this.player.position.x;
+        const playerY = this.player.position.y;
+
+        this.knives.forEach(knife => {
+            if (!knife.collected &&
+                knife.position.x === playerX &&
+                knife.position.y === playerY) {
+
+                knife.collected = true;
+                this.player.collectKnife(knife.color);
+                console.log(`玩家收集了${knife.color}色刀`);
+            }
+        });
+
+        // 移除已收集的刀
+        this.knives = this.knives.filter(knife => !knife.collected);
+    }
+
+    optimizedRender() {
+        // 清空画布
+        this.ctx.fillStyle = '#0d1930';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // 渲染地图
+        this.renderMap();
+
+        // 渲染刀
+        this.renderKnives();
+
+        // 渲染NPC
+        this.renderNPCs();
+
+        // 渲染玩家
+        this.renderPlayer();
+
+        // 渲染性能信息（调试用）
+        this.renderPerformanceInfo();
+    }
+
+    updatePerformanceStats(currentTime) {
+        this.frameCount++;
+
+        if (currentTime - this.lastFpsUpdate >= 1000) {
+            this.fps = Math.round((this.frameCount * 1000) / (currentTime - this.lastFpsUpdate));
+            this.frameCount = 0;
+            this.lastFpsUpdate = currentTime;
+        }
+    }
+
+    renderPerformanceInfo() {
+        // 在开发模式下显示性能信息
+        if (this.config.debugMode) {
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = '12px Courier New';
+            this.ctx.fillText(`FPS: ${this.fps}`, 10, 20);
+            this.ctx.fillText(`NPCs: ${this.npcs.filter(npc => npc.isAlive).length}`, 10, 35);
+            this.ctx.fillText(`Knives: ${this.knives.length}`, 10, 50);
+        }
+    }
+
+    // 增强的位置验证方法
+    isValidPosition(x, y) {
+        // 检查边界
+        if (x < 0 || x >= this.config.mapSize.width ||
+            y < 0 || y >= this.config.mapSize.height) {
+            return false;
+        }
+
+        // 检查障碍物
+        if (this.map[y][x] !== 0) {
+            return false;
+        }
+
+        // 检查实体冲突
+        return !this.isPositionOccupied(x, y);
+    }
+
+    isPositionOccupied(x, y) {
+        // 检查玩家位置
+        if (this.player && this.player.position.x === x && this.player.position.y === y) {
+            return true;
+        }
+
+        // 检查NPC位置
+        for (const npc of this.npcs) {
+            if (npc.isAlive && npc.position.x === x && npc.position.y === y) {
+                return true;
+            }
+        }
+
+        // 检查刀位置
+        for (const knife of this.knives) {
+            if (!knife.collected && knife.position.x === x && knife.position.y === y) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     update() {
