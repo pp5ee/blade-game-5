@@ -1,2 +1,27 @@
 # Humanize RLCR loop artifacts
 .humanize*
+
+# Development and test files
+test-*.js
+*.test.js
+*.spec.js
+
+# Build artifacts and dependencies
+node_modules/
+dist/
+build/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Log files and temporary files
+*.log
+*.tmp
+*.temp
+
+# OS generated files
+.DS_Store
+Thumbs.db
