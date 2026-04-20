@@ -1,4 +1,6 @@
 // 游戏主循环和状态管理类
+import { OptimizationManager } from '../performance/OptimizationManager.js';
+
 class Game {
     constructor() {
         this.canvas = document.getElementById('game-canvas');
@@ -14,6 +16,9 @@ class Game {
         this.player = null;
         this.npcs = [];
         this.knives = [];
+
+        // 性能优化
+        this.optimizationManager = null;
 
         // 游戏配置
         this.config = {
@@ -43,6 +48,9 @@ class Game {
 
         // 初始化游戏
         this.initializeGame();
+
+        // 初始化性能优化管理器
+        this.optimizationManager = new OptimizationManager(this);
     }
 
     initializeGame() {
@@ -142,5 +150,259 @@ class Game {
             : null;
     }
 
-    // 其他方法保持不变...
+    start() {
+        if (this.isRunning) return;
+
+        this.isRunning = true;
+        console.log('游戏开始');
+
+        // 绑定键盘事件
+        this.bindInputEvents();
+
+        // 启动游戏循环
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    }
+
+    stop() {
+        this.isRunning = false;
+        if (this.gameLoop) {
+            cancelAnimationFrame(this.gameLoop);
+        }
+        console.log('游戏停止');
+    }
+
+    update() {
+        if (!this.isRunning) return;
+
+        // 更新游戏状态
+        this.updateEntities();
+        this.checkCollisions();
+        this.checkCombat();
+        this.render();
+
+        // 继续游戏循环
+        this.gameLoop = requestAnimationFrame(() => this.update());
+    }
+
+    updateEntities() {
+        // 更新玩家
+        if (this.player) {
+            this.player.update();
+        }
+
+        // 更新NPC
+        this.npcs.forEach(npc => {
+            if (npc) {
+                npc.update();
+            }
+        });
+
+        // 性能优化监控
+        if (this.optimizationManager) {
+            this.optimizationManager.monitorPerformance();
+        }
+    }
+
+    checkCollisions() {
+        // 检查玩家与刀的碰撞
+        this.knives.forEach(knife => {
+            if (!knife.collected && this.player && this.player.position &&
+                knife.position && this.player.position.x === knife.position.x &&
+                this.player.position.y === knife.position.y) {
+
+                this.player.collectKnife(knife.color);
+                knife.collected = true;
+                console.log(`玩家收集到${knife.color}色刀`);
+            }
+        });
+
+        // 移除已收集的刀
+        this.knives = this.knives.filter(knife => !knife.collected);
+
+        // 如果刀数量不足，补充生成
+        if (this.knives.length < this.config.maxKnives / 2) {
+            this.generateAdditionalKnives();
+        }
+    }
+
+    checkCombat() {
+        if (!this.player || !this.combatSystem) return;
+
+        // 检查玩家与NPC的战斗
+        this.npcs.forEach((npc, index) => {
+            if (npc && npc.position && this.player.position &&
+                npc.position.x === this.player.position.x &&
+                npc.position.y === this.player.position.y) {
+
+                const result = this.combatSystem.resolveCombat(this.player, npc);
+
+                if (result.playerWon) {
+                    // 玩家获胜，获得NPC的刀
+                    this.player.knives = { ...this.player.knives, ...npc.knives };
+                    this.npcs.splice(index, 1);
+                    console.log('玩家击败NPC，获得战利品');
+                } else {
+                    // NPC获胜，游戏结束
+                    this.gameState = 'gameOver';
+                    this.stop();
+                    console.log('游戏结束：玩家被击败');
+                }
+            }
+        });
+
+        // 如果NPC数量不足，补充生成
+        if (this.npcs.length < this.config.dynamicDifficulty.minNPCs) {
+            this.generateAdditionalNPCs();
+        }
+    }
+
+    generateAdditionalKnives() {
+        const neededKnives = this.config.maxKnives - this.knives.length;
+        for (let i = 0; i < neededKnives; i++) {
+            const knife = this.createRandomKnife();
+            if (knife) {
+                this.knives.push(knife);
+            }
+        }
+    }
+
+    generateAdditionalNPCs() {
+        const neededNpcs = Math.floor(this.config.dynamicDifficulty.minNPCs - this.npcs.length);
+        for (let i = 0; i < neededNpcs; i++) {
+            const npc = new NPC(this.map, this.config, this.player);
+            if (npc.position) {
+                this.npcs.push(npc);
+            }
+        }
+    }
+
+    createRandomKnife() {
+        const colors = ['red', 'yellow', 'blue'];
+        const probabilities = this.config.knifeProbabilities;
+
+        const rand = Math.random();
+        let color = 'blue';
+
+        if (rand < probabilities.red) {
+            color = 'red';
+        } else if (rand < probabilities.red + probabilities.yellow) {
+            color = 'yellow';
+        }
+
+        const position = this.getRandomEmptyPosition();
+        if (!position) return null;
+
+        return {
+            position: position,
+            color: color,
+            collected: false
+        };
+    }
+
+    bindInputEvents() {
+        document.addEventListener('keydown', (event) => {
+            if (this.player) {
+                this.player.handleInput(event);
+            }
+        });
+    }
+
+    render() {
+        if (!this.ctx || !this.canvas) return;
+
+        // 清空画布
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // 渲染地图
+        this.renderMap();
+
+        // 渲染刀
+        this.renderKnives();
+
+        // 渲染NPC
+        this.renderNPCs();
+
+        // 渲染玩家
+        if (this.player) {
+            this.player.render(this.ctx);
+        }
+
+        // 渲染UI
+        if (window.gameUI) {
+            window.gameUI.render(this.player, this.gameState);
+        }
+    }
+
+    renderMap() {
+        const cellSize = this.config.cellSize;
+
+        for (let y = 0; y < this.config.mapSize.height; y++) {
+            for (let x = 0; x < this.config.mapSize.width; x++) {
+                const tileType = this.map[y][x];
+                const xPos = x * cellSize;
+                const yPos = y * cellSize;
+
+                // 绘制地面或障碍物
+                if (tileType === 0) { // 可通行区域
+                    this.ctx.fillStyle = '#2a2a2a';
+                } else { // 障碍物
+                    this.ctx.fillStyle = '#555555';
+                }
+
+                this.ctx.fillRect(xPos, yPos, cellSize, cellSize);
+                this.ctx.strokeStyle = '#444444';
+                this.ctx.strokeRect(xPos, yPos, cellSize, cellSize);
+            }
+        }
+    }
+
+    renderKnives() {
+        const cellSize = this.config.cellSize;
+
+        this.knives.forEach(knife => {
+            if (!knife.collected && knife.position) {
+                const xPos = knife.position.x * cellSize + cellSize / 2;
+                const yPos = knife.position.y * cellSize + cellSize / 2;
+                const radius = cellSize / 4;
+
+                // 根据颜色设置刀的外观
+                switch (knife.color) {
+                    case 'red':
+                        this.ctx.fillStyle = '#ff4444';
+                        break;
+                    case 'yellow':
+                        this.ctx.fillStyle = '#ffff44';
+                        break;
+                    case 'blue':
+                        this.ctx.fillStyle = '#4444ff';
+                        break;
+                }
+
+                this.ctx.beginPath();
+                this.ctx.arc(xPos, yPos, radius, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                // 添加刀柄效果
+                this.ctx.fillStyle = '#888888';
+                this.ctx.fillRect(xPos - radius/2, yPos - radius/2, radius, radius/3);
+            }
+        });
+    }
+
+    renderNPCs() {
+        this.npcs.forEach(npc => {
+            if (npc && npc.position) {
+                npc.render(this.ctx);
+            }
+        });
+    }
+
+    resetGame() {
+        this.stop();
+        this.initializeGame();
+        this.gameState = 'playing';
+        console.log('游戏重置');
+    }
 }
+
+export { Game };

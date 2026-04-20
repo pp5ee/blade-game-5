@@ -171,7 +171,34 @@ class NPC {
 
     getAttackPower() {
         // 根据刀颜色计算攻击力：红=黄×2=蓝×4
-        return this.knives.red * 4 + this.knives.yellow * 2 + this.knives.blue;
+        return (this.knives.red || 0) * 4 + (this.knives.yellow || 0) * 2 + (this.knives.blue || 0);
+    }
+
+    getRandomSpawnPosition() {
+        if (!this.map) return { x: 0, y: 0 };
+
+        const emptyPositions = [];
+        for (let y = 0; y < this.map.length; y++) {
+            for (let x = 0; x < this.map[0].length; x++) {
+                if (this.map[y][x] === 0) { // 可通行区域
+                    // 检查是否与玩家位置冲突
+                    const isPlayerPosition = this.player && this.player.position &&
+                                           this.player.position.x === x && this.player.position.y === y;
+
+                    // 检查是否与其他NPC位置冲突
+                    const isNPCPosition = this.otherNPCs && this.otherNPCs.some(npc =>
+                                         npc.position && npc.position.x === x && npc.position.y === y);
+
+                    if (!isPlayerPosition && !isNPCPosition) {
+                        emptyPositions.push({ x, y });
+                    }
+                }
+            }
+        }
+
+        return emptyPositions.length > 0
+            ? emptyPositions[Math.floor(Math.random() * emptyPositions.length)]
+            : { x: 0, y: 0 };
     }
 
     reset() {
