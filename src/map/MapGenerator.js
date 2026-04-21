@@ -10,13 +10,17 @@ export class MapGenerator {
         // 地图配置
         this.config = {
             gridSize: 50,
-            obstacleDensity: 0.15,  // 障碍物密度
-            safeZoneRadius: 100      // 玩家安全区域半径
+            obstacleDensity: 0.15,      // 障碍物密度
+            safeZoneRadius: 100,        // 玩家安全区域半径
+            terrainTypes: ['grass', 'dirt', 'stone', 'water'],
+            structureTypes: ['wall', 'rock', 'tree', 'ruins']
         };
 
         // 地图数据
         this.mapData = null;
         this.obstacles = [];
+        this.terrain = [];
+        this.structures = [];
 
         // 生成初始地图
         this.generateMap();
@@ -37,22 +41,34 @@ export class MapGenerator {
             grid: []
         };
 
+        // 重置地图数据
+        this.obstacles = [];
+        this.terrain = [];
+        this.structures = [];
+
         // 初始化网格
         for (let y = 0; y < gridHeight; y++) {
             this.mapData.grid[y] = [];
             for (let x = 0; x < gridWidth; x++) {
                 this.mapData.grid[y][x] = {
                     isObstacle: false,
+                    terrainType: 'grass',
                     x: x * this.config.gridSize,
                     y: y * this.config.gridSize
                 };
             }
         }
 
+        // 生成地形
+        this.generateTerrain();
+
         // 生成障碍物
         this.generateObstacles();
 
-        console.log(`地图生成完成: ${gridWidth}x${gridHeight} 网格`);
+        // 生成结构
+        this.generateStructures();
+
+        console.log(`地图生成完成: ${gridWidth}x${gridHeight} 网格，包含 ${this.obstacles.length} 个障碍物，${this.structures.length} 个结构`);
     }
 
     /**
@@ -87,6 +103,84 @@ export class MapGenerator {
         }
 
         console.log(`生成了 ${this.obstacles.length} 个障碍物`);
+    }
+
+    /**
+     * 生成地形
+     */
+    generateTerrain() {
+        const gridWidth = this.mapData.gridWidth;
+        const gridHeight = this.mapData.gridHeight;
+
+        // 使用Perlin噪声生成地形（简化版）
+        for (let y = 0; y < gridHeight; y++) {
+            for (let x = 0; x < gridWidth; x++) {
+                // 简单的随机地形生成
+                const noiseValue = Math.random();
+
+                if (noiseValue < 0.6) {
+                    this.mapData.grid[y][x].terrainType = 'grass';
+                } else if (noiseValue < 0.8) {
+                    this.mapData.grid[y][x].terrainType = 'dirt';
+                } else if (noiseValue < 0.95) {
+                    this.mapData.grid[y][x].terrainType = 'stone';
+                } else {
+                    this.mapData.grid[y][x].terrainType = 'water';
+                    this.mapData.grid[y][x].isObstacle = true; // 水是障碍物
+                }
+
+                // 记录地形信息
+                this.terrain.push({
+                    x: x * this.config.gridSize,
+                    y: y * this.config.gridSize,
+                    width: this.config.gridSize,
+                    height: this.config.gridSize,
+                    type: this.mapData.grid[y][x].terrainType
+                });
+            }
+        }
+
+        console.log('地形生成完成');
+    }
+
+    /**
+     * 生成结构
+     */
+    generateStructures() {
+        const gridWidth = this.mapData.gridWidth;
+        const gridHeight = this.mapData.gridHeight;
+        const structureCount = Math.floor((gridWidth * gridHeight) * 0.05); // 5%的格子生成结构
+
+        for (let i = 0; i < structureCount; i++) {
+            const x = Math.floor(Math.random() * gridWidth);
+            const y = Math.floor(Math.random() * gridHeight);
+
+            // 跳过玩家安全区域
+            const playerStartPos = this.getPlayerStartPosition();
+            const distance = Math.sqrt(
+                Math.pow(x * this.config.gridSize - playerStartPos.x, 2) +
+                Math.pow(y * this.config.gridSize - playerStartPos.y, 2)
+            );
+
+            if (distance > this.config.safeZoneRadius && !this.mapData.grid[y][x].isObstacle) {
+                const structureType = this.config.structureTypes[
+                    Math.floor(Math.random() * this.config.structureTypes.length)
+                ];
+
+                // 标记为障碍物
+                this.mapData.grid[y][x].isObstacle = true;
+
+                this.structures.push({
+                    x: x * this.config.gridSize,
+                    y: y * this.config.gridSize,
+                    width: this.config.gridSize,
+                    height: this.config.gridSize,
+                    type: structureType
+                });
+            }
+        }
+
+        console.log(`生成了 ${this.structures.length} 个结构`);
     }
 
     /**
@@ -262,6 +356,9 @@ export class MapGenerator {
      * 渲染地图
      */
     render(ctx) {
+        // 绘制地形
+        this.renderTerrain(ctx);
+
         // 绘制网格（调试模式）
         if (this.game.state === 'debug') {
             this.renderGrid(ctx);
@@ -269,6 +366,9 @@ export class MapGenerator {
 
         // 绘制障碍物
         this.renderObstacles(ctx);
+
+        // 绘制结构
+        this.renderStructures(ctx);
     }
 
     /**
@@ -327,5 +427,81 @@ export class MapGenerator {
     reset() {
         this.generateMap();
         console.log('地图重置完成');
+    }
+
+    /**
+     * 渲染地形
+     */
+    renderTerrain(ctx) {
+        const terrainColors = {
+            grass: '#2a7d2a',
+            dirt: '#8b6b3c',
+            stone: '#6b6b6b',
+            water: '#1e5a8a'
+        };
+
+        for (const terrain of this.terrain) {
+            ctx.fillStyle = terrainColors[terrain.type] || '#2a7d2a';
+            ctx.fillRect(terrain.x, terrain.y, terrain.width, terrain.height);
+
+            // 添加纹理效果
+            if (terrain.type === 'grass') {
+                ctx.fillStyle = 'rgba(60, 179, 113, 0.3)';
+            } else if (terrain.type === 'dirt') {
+                ctx.fillStyle = 'rgba(139, 69, 19, 0.3)';
+            } else if (terrain.type === 'stone') {
+                ctx.fillStyle = 'rgba(169, 169, 169, 0.3)';
+            } else if (terrain.type === 'water') {
+                ctx.fillStyle = 'rgba(30, 144, 255, 0.3)';
+            }
+
+            // 添加纹理点
+            for (let i = 0; i < 4; i++) {
+                const dotX = terrain.x + Math.random() * terrain.width;
+                const dotY = terrain.y + Math.random() * terrain.height;
+                const dotSize = Math.random() * 3 + 1;
+                ctx.fillRect(dotX, dotY, dotSize, dotSize);
+            }
+        }
+    }
+
+    /**
+     * 渲染结构
+     */
+    renderStructures(ctx) {
+        const structureColors = {
+            wall: '#8b7355',
+            rock: '#696969',
+            tree: '#228b22',
+            ruins: '#a0522d'
+        };
+
+        for (const structure of this.structures) {
+            ctx.fillStyle = structureColors[structure.type] || '#8b7355';
+            ctx.fillRect(structure.x, structure.y, structure.width, structure.height);
+
+            // 添加结构细节
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(structure.x, structure.y, structure.width, structure.height);
+
+            // 根据结构类型添加不同细节
+            if (structure.type === 'tree') {
+                // 绘制树冠
+                ctx.fillStyle = '#006400';
+                ctx.beginPath();
+                ctx.arc(structure.x + structure.width/2, structure.y + structure.height/3, structure.width/2, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (structure.type === 'rock') {
+                // 岩石纹理
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                for (let i = 0; i < 3; i++) {
+                    const rockX = structure.x + Math.random() * structure.width;
+                    const rockY = structure.y + Math.random() * structure.height;
+                    const rockSize = Math.random() * 5 + 2;
+                    ctx.fillRect(rockX, rockY, rockSize, rockSize);
+                }
+            }
+        }
     }
 }

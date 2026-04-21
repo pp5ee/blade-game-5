@@ -64,12 +64,13 @@ export class CombatSystem {
 
     /**
      * 根据刀类型获取伤害倍率
+     * 按照原始规格：红色刀伤害=黄色刀×2=蓝色刀×4
      */
     getKnifeMultiplier(knifeType) {
         const multiplierMap = {
-            red: 1.0,    // 标准伤害
-            yellow: 1.5, // 高伤害
-            blue: 0.8    // 低伤害但附加效果
+            red: 4.0,    // 红色刀：4倍伤害
+            yellow: 2.0, // 黄色刀：2倍伤害
+            blue: 1.0    // 蓝色刀：基础伤害
         };
         return multiplierMap[knifeType] || 1.0;
     }

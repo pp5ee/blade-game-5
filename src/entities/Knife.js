@@ -32,24 +32,25 @@ export class Knife {
 
     /**
      * 刀类型定义
+     * 按照原始规格：红色刀伤害=黄色刀×2=蓝色刀×4
      */
     static TYPES = {
         red: {
-            damageBonus: 0.15,    // 15% 攻击力加成
-            color: '#e94560',     // 红色
-            rarity: 0.6,          // 60% 生成概率
+            damageMultiplier: 4.0, // 4倍伤害
+            color: '#e94560',      // 红色
+            rarity: 0.1,           // 10% 生成概率（最稀有）
             name: '红刀'
         },
         yellow: {
-            damageBonus: 0.25,    // 25% 攻击力加成
-            color: '#ffd166',     // 黄色
-            rarity: 0.3,          // 30% 生成概率
+            damageMultiplier: 2.0, // 2倍伤害
+            color: '#ffd166',      // 黄色
+            rarity: 0.3,           // 30% 生成概率
             name: '黄刀'
         },
         blue: {
-            damageBonus: 0.35,    // 35% 攻击力加成
-            color: '#118ab2',     // 蓝色
-            rarity: 0.1,          // 10% 生成概率
+            damageMultiplier: 1.0, // 基础伤害
+            color: '#118ab2',      // 蓝色
+            rarity: 0.6,           // 60% 生成概率（最常见）
             name: '蓝刀'
         }
     };
@@ -74,7 +75,7 @@ export class Knife {
         } else {
             this.updateFloatEffect(deltaTime);
             this.updatePulseEffect(deltaTime);
-            this.checkPlayerCollision();
+            this.checkEntityCollision();
         }
     }
 
@@ -93,15 +94,24 @@ export class Knife {
     }
 
     /**
-     * 检查玩家碰撞
+     * 检查实体碰撞（玩家和NPC）
      */
-    checkPlayerCollision() {
-        const player = this.game.player;
-        if (!player || this.isCollected) return;
+    checkEntityCollision() {
+        if (this.isCollected) return;
 
-        // 简单的矩形碰撞检测
-        if (this.checkCollision(player)) {
+        // 检查玩家碰撞
+        const player = this.game.player;
+        if (player && this.checkCollision(player)) {
             this.collect(player);
+            return;
+        }
+
+        // 检查NPC碰撞
+        for (const npc of this.game.npcs) {
+            if (npc.isAlive && this.checkCollision(npc)) {
+                this.collect(npc);
+                return;
+            }
         }
     }
 
@@ -118,17 +128,27 @@ export class Knife {
     /**
      * 收集刀
      */
-    collect(player) {
+    collect(entity) {
         if (this.isCollected) return false;
 
         this.isCollected = true;
         this.collectionTimer = 0;
 
-        // 玩家收集刀
-        const collected = player.collectKnife(this.type);
+        let collected = false;
+        let entityType = '';
+
+        // 判断实体类型并调用相应的收集方法
+        if (entity.constructor.name === 'Player') {
+            collected = entity.collectKnife(this.type);
+            entityType = '玩家';
+        } else if (entity.constructor.name === 'NPC') {
+            entity.collectKnife(this.type);
+            collected = true; // NPC总是成功收集
+            entityType = `NPC ${entity.type}`;
+        }
 
         if (collected) {
-            console.log(`玩家收集到 ${this.name}`);
+            console.log(`${entityType} 收集到 ${this.name}`);
 
             // 播放收集音效（如果有）
             this.playCollectionSound();

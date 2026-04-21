@@ -480,14 +480,32 @@ export class Game {
         this.stats.defeatedNpcs++;
         this.stats.score += 50;
 
-        // NPC死亡时有概率掉落刀
-        if (Math.random() < 0.4) { // 40%概率掉落
-            const knifeType = Knife.getRandomType();
-            const knife = new Knife(this, npc.x, npc.y, knifeType);
+        // NPC死亡时掉落所有收集的刀
+        const collectedKnives = npc.getKnifeCount();
+        let totalDropped = 0;
+
+        // 掉落红色刀
+        for (let i = 0; i < collectedKnives.red; i++) {
+            const knife = new Knife(this, npc.x + Math.random() * 30 - 15, npc.y + Math.random() * 30 - 15, 'red');
             this.knives.push(knife);
+            totalDropped++;
         }
 
-        console.log(`NPC被击败！当前击败数: ${this.stats.defeatedNpcs}`);
+        // 掉落黄色刀
+        for (let i = 0; i < collectedKnives.yellow; i++) {
+            const knife = new Knife(this, npc.x + Math.random() * 30 - 15, npc.y + Math.random() * 30 - 15, 'yellow');
+            this.knives.push(knife);
+            totalDropped++;
+        }
+
+        // 掉落蓝色刀
+        for (let i = 0; i < collectedKnives.blue; i++) {
+            const knife = new Knife(this, npc.x + Math.random() * 30 - 15, npc.y + Math.random() * 30 - 15, 'blue');
+            this.knives.push(knife);
+            totalDropped++;
+        }
+
+        console.log(`NPC被击败！掉落 ${totalDropped} 把刀，当前击败数: ${this.stats.defeatedNpcs}`);
     }
 
     /**

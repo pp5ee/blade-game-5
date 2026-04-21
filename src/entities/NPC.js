@@ -30,6 +30,13 @@ export class NPC {
         this.attackCooldown = 0;
         this.attackInterval = 1; // 攻击间隔1秒
 
+        // 刀收集系统
+        this.collectedKnives = {
+            red: 0,
+            yellow: 0,
+            blue: 0
+        };
+
         // 视觉效果
         this.setVisuals();
         this.hitEffect = 0;
@@ -358,6 +365,27 @@ export class NPC {
     }
 
     /**
+     * 收集刀
+     */
+    collectKnife(knifeType) {
+        if (this.collectedKnives.hasOwnProperty(knifeType)) {
+            this.collectedKnives[knifeType]++;
+            console.log(`NPC ${this.type} 收集了 ${knifeType} 刀，当前数量: ${this.collectedKnives[knifeType]}`);
+        }
+    }
+
+    /**
+     * 获取收集的刀数量
+     */
+    getKnifeCount() {
+        return {
+            red: this.collectedKnives.red,
+            yellow: this.collectedKnives.yellow,
+            blue: this.collectedKnives.blue
+        };
+    }
+
+    /**
      * 重置NPC状态
      */
     reset() {
@@ -367,6 +395,13 @@ export class NPC {
         this.stateTimer = 0;
         this.hitEffect = 0;
         this.attackCooldown = 0;
+
+        // 清空收集的刀
+        this.collectedKnives = {
+            red: 0,
+            yellow: 0,
+            blue: 0
+        };
     }
 
     /**
