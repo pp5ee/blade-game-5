@@ -1,221 +1,262 @@
-// 游戏界面显示类
-class GameUI {
+/**
+ * 转刀刀游戏 - 用户界面模块
+ * 负责游戏UI显示、状态更新和交互
+ */
+
+export class GameUI {
     constructor(game) {
         this.game = game;
-        this.gameStatusElem = document.getElementById('game-status');
-        this.redKnivesElem = document.getElementById('red-knives');
-        this.yellowKnivesElem = document.getElementById('yellow-knives');
-        this.blueKnivesElem = document.getElementById('blue-knives');
-        this.startBtn = document.getElementById('start-btn');
-        this.restartBtn = document.getElementById('restart-btn');
 
-        // 初始化UI
-        this.initializeUI();
+        // UI元素引用
+        this.elements = {
+            playerHp: document.getElementById('player-hp'),
+            redKnives: document.getElementById('red-knives'),
+            yellowKnives: document.getElementById('yellow-knives'),
+            blueKnives: document.getElementById('blue-knives'),
+            defeatedNpcs: document.getElementById('defeated-npcs'),
+            gameStatus: document.getElementById('game-status'),
+            startBtn: document.getElementById('start-btn'),
+            restartBtn: document.getElementById('restart-btn'),
+            pauseBtn: document.getElementById('pause-btn')
+        };
+
+        // UI状态
+        this.isVisible = true;
+        this.lastUpdateTime = 0;
+        this.updateInterval = 100; // 100ms更新间隔
 
         console.log('游戏UI初始化完成');
     }
 
-    initializeUI() {
-        // 设置初始状态
-        this.updateGameStatus('准备开始');
-        this.updateKnifeCounts(0, 0, 0);
-
-        // 绑定按钮事件
-        this.bindButtonEvents();
-    }
-
-    bindButtonEvents() {
-        // 开始按钮事件已经在main.js中处理
-        // 这里主要处理UI相关的更新
-    }
-
+    /**
+     * 更新UI显示
+     */
     update() {
-        if (!this.game) return;
+        const currentTime = Date.now();
 
-        // 更新游戏状态显示
-        this.updateGameStatus(this.getStatusText());
-
-        // 更新刀数量显示
-        if (this.game.player) {
-            this.updateKnifeCounts(
-                this.game.player.knives.red,
-                this.game.player.knives.yellow,
-                this.game.player.knives.blue
-            );
+        // 限制更新频率
+        if (currentTime - this.lastUpdateTime < this.updateInterval) {
+            return;
         }
 
-        // 更新按钮状态
-        this.updateButtonStates();
+        this.lastUpdateTime = currentTime;
+
+        // 更新玩家状态
+        this.updatePlayerStats();
+
+        // 更新刀收集统计
+        this.updateKnifeStats();
+
+        // 更新游戏状态
+        this.updateGameStatus();
+
+        // 更新控制按钮
+        this.updateControlButtons();
     }
 
-    updateGameStatus(status) {
-        if (this.gameStatusElem) {
-            this.gameStatusElem.textContent = status;
+    /**
+     * 更新玩家状态显示
+     */
+    updatePlayerStats() {
+        if (this.elements.playerHp && this.game.player) {
+            const player = this.game.player;
+            this.elements.playerHp.textContent = `${player.hp}/${player.maxHp}`;
 
-            // 根据状态更新样式
-            this.gameStatusElem.className = 'stat-value';
-            if (status.includes('游戏结束')) {
-                this.gameStatusElem.classList.add('status-game-over');
-            } else if (status.includes('胜利')) {
-                this.gameStatusElem.classList.add('status-won');
+            // 根据生命值设置颜色
+            const hpPercent = player.hp / player.maxHp;
+            if (hpPercent > 0.5) {
+                this.elements.playerHp.style.color = '#06d6a0';
+            } else if (hpPercent > 0.25) {
+                this.elements.playerHp.style.color = '#ffd166';
             } else {
-                this.gameStatusElem.classList.add('status-playing');
+                this.elements.playerHp.style.color = '#e94560';
             }
         }
     }
 
-    updateKnifeCounts(red, yellow, blue) {
-        if (this.redKnivesElem) this.redKnivesElem.textContent = red;
-        if (this.yellowKnivesElem) this.yellowKnivesElem.textContent = yellow;
-        if (this.blueKnivesElem) this.blueKnivesElem.textContent = blue;
-    }
-
-    updateButtonStates() {
-        if (this.startBtn && this.restartBtn) {
-            const isRunning = this.game.isRunning;
-            const gameState = this.game.gameState;
-
-            // 开始按钮：游戏未运行时可用
-            this.startBtn.disabled = isRunning;
-
-            // 重新开始按钮：游戏结束时可用
-            this.restartBtn.disabled = !(gameState === 'gameOver' || gameState === 'won');
-        }
-    }
-
-    getStatusText() {
-        if (!this.game) return '准备开始';
-
-        switch (this.game.gameState) {
-            case 'playing':
-                const remainingNPCs = this.game.npcs.filter(npc => npc.isAlive).length;
-                return `游戏中 - 剩余NPC: ${remainingNPCs}`;
-
-            case 'gameOver':
-                return '游戏结束 - 你被击败了！';
-
-            case 'won':
-                return '胜利！你击败了所有NPC！';
-
-            default:
-                return '准备开始';
-        }
-    }
-
-    // 显示战斗信息
-    showCombatInfo(attacker, defender, result) {
-        if (!this.game) return;
-
-        const combatLog = this.formatCombatLog(attacker, defender, result);
-        console.log('战斗信息:', combatLog);
-
-        // 更新游戏状态显示
-        this.updateGameStatus(this.getStatusText());
-
-        // 显示战斗动画
-        this.showCombatAnimation(result);
-
-        // 更新刀数量显示
+    /**
+     * 更新刀收集统计
+     */
+    updateKnifeStats() {
         if (this.game.player) {
-            this.updatePlayerStats(this.game.player);
+            const knives = this.game.player.knives;
+
+            if (this.elements.redKnives) {
+                this.elements.redKnives.textContent = knives.red;
+            }
+
+            if (this.elements.yellowKnives) {
+                this.elements.yellowKnives.textContent = knives.yellow;
+            }
+
+            if (this.elements.blueKnives) {
+                this.elements.blueKnives.textContent = knives.blue;
+            }
         }
     }
 
-    formatCombatLog(attacker, defender, result) {
-        const attackerName = attacker === this.game.player ? '玩家' : 'NPC';
-        const defenderName = defender === this.game.player ? '玩家' : 'NPC';
+    /**
+     * 更新游戏状态显示
+     */
+    updateGameStatus() {
+        if (this.elements.gameStatus) {
+            let statusText = '';
+            let statusColor = '#e94560';
 
-        let log = `⚔️ 战斗开始: ${attackerName} vs ${defenderName}\n`;
-        log += `🗡️ 攻击力: ${result.attackerPower} vs ${result.defenderPower}\n`;
-        log += `💥 伤害: ${result.attackerDamage} vs ${result.defenderDamage}\n`;
+            switch (this.game.state) {
+                case 'ready':
+                    statusText = '准备开始游戏';
+                    statusColor = '#118ab2';
+                    break;
+                case 'playing':
+                    statusText = '游戏进行中';
+                    statusColor = '#06d6a0';
+                    break;
+                case 'paused':
+                    statusText = '游戏暂停';
+                    statusColor = '#ffd166';
+                    break;
+                case 'gameOver':
+                    statusText = '游戏结束 - 你被击败了！';
+                    statusColor = '#e94560';
+                    break;
+                case 'won':
+                    statusText = '恭喜！你获得了胜利！';
+                    statusColor = '#06d6a0';
+                    break;
+                default:
+                    statusText = '未知状态';
+            }
 
-        if (result.winner === 'attacker') {
-            log += `🎯 胜利者: ${attackerName}`;
-            if (result.critical) {
-                log += ' 💥暴击!';
-            }
-        } else if (result.winner === 'defender') {
-            log += `🎯 胜利者: ${defenderName}`;
-            if (result.critical) {
-                log += ' 💥暴击!';
-            }
-        } else {
-            log += '🤝 战斗平局';
+            this.elements.gameStatus.textContent = statusText;
+            this.elements.gameStatus.style.background = statusColor;
         }
-
-        return log;
     }
 
-    showCombatAnimation(result) {
-        // 简单的战斗动画效果
-        const canvas = this.game.canvas;
-        const ctx = this.game.ctx;
-
-        // 在画布上显示战斗文本（临时效果）
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(canvas.width / 2 - 100, canvas.height / 2 - 20, 200, 40);
-
-        ctx.fillStyle = 'white';
-        ctx.font = '16px Courier New';
-        ctx.textAlign = 'center';
-
-        let text = '';
-        if (result.winner === 'attacker') {
-            text = result.critical ? '暴击！' : '攻击成功！';
-        } else if (result.winner === 'defender') {
-            text = result.critical ? '被暴击！' : '被攻击！';
-        } else {
-            text = '平局！';
+    /**
+     * 更新控制按钮状态
+     */
+    updateControlButtons() {
+        if (this.elements.startBtn) {
+            this.elements.startBtn.disabled = this.game.state === 'playing' || this.game.state === 'paused';
         }
 
-        ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+        if (this.elements.restartBtn) {
+            this.elements.restartBtn.disabled = this.game.state === 'ready';
+        }
 
-        // 1秒后清除文本
+        if (this.elements.pauseBtn) {
+            this.elements.pauseBtn.disabled = this.game.state !== 'playing' && this.game.state !== 'paused';
+            this.elements.pauseBtn.textContent = this.game.state === 'paused' ? '继续' : '暂停';
+        }
+    }
+
+    /**
+     * 显示消息
+     */
+    showMessage(message, type = 'info', duration = 3000) {
+        console.log(`[UI消息] ${type}: ${message}`);
+
+        // 创建消息元素
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `ui-message ui-message-${type}`;
+        messageDiv.textContent = message;
+
+        // 设置样式
+        messageDiv.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: ${this.getMessageColor(type)};
+            color: white;
+            padding: 15px 30px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            z-index: 1000;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        `;
+
+        // 添加到页面
+        document.body.appendChild(messageDiv);
+
+        // 自动移除
         setTimeout(() => {
-            this.game.render(); // 重新渲染游戏画面
-        }, 1000);
+            if (messageDiv.parentNode) {
+                messageDiv.parentNode.removeChild(messageDiv);
+            }
+        }, duration);
     }
 
-    // 显示游戏提示
-    showGameTip(message, duration = 3000) {
-        console.log('游戏提示:', message);
-
-        // 可以在这里添加更复杂的提示显示逻辑
-        // 例如在屏幕上显示浮动提示文字
+    /**
+     * 根据消息类型获取颜色
+     */
+    getMessageColor(type) {
+        const colors = {
+            info: '#118ab2',
+            success: '#06d6a0',
+            warning: '#ffd166',
+            error: '#e94560'
+        };
+        return colors[type] || colors.info;
     }
 
-    // 更新玩家统计数据
-    updatePlayerStats(player) {
-        if (!player) return;
+    /**
+     * 显示游戏日志
+     */
+    showGameLog(message) {
+        console.log(`[游戏日志] ${message}`);
 
-        // 更新刀数量显示
-        this.updateKnifeCounts(player.knives.red, player.knives.yellow, player.knives.blue);
-
-        // 更新总刀数
-        const totalKnivesElem = document.getElementById('total-knives');
-        if (totalKnivesElem) {
-            totalKnivesElem.textContent = player.getTotalKnives();
-        }
-
-        // 更新击败NPC数量
-        const defeatedNpcsElem = document.getElementById('defeated-npcs');
-        if (defeatedNpcsElem && this.game) {
-            const initialNpcs = this.game.config?.maxNPCs || 5;
-            const currentNpcs = this.game.npcs?.length || 0;
-            defeatedNpcsElem.textContent = Math.max(0, initialNpcs - currentNpcs);
-        }
+        // 游戏日志显示逻辑将在后续任务中实现
+        // 可以添加到游戏日志面板或控制台
     }
 
-    // 重置UI
+    /**
+     * 切换UI可见性
+     */
+    toggleVisibility() {
+        this.isVisible = !this.isVisible;
+
+        const uiElements = document.querySelectorAll('.game-info, .game-controls');
+        uiElements.forEach(element => {
+            element.style.display = this.isVisible ? 'flex' : 'none';
+        });
+
+        console.log(`UI ${this.isVisible ? '显示' : '隐藏'}`);
+    }
+
+    /**
+     * 显示游戏结束画面
+     */
+    showGameOverScreen() {
+        this.showMessage('游戏结束！点击重新开始', 'error', 5000);
+    }
+
+    /**
+     * 显示胜利画面
+     */
+    showVictoryScreen() {
+        this.showMessage('恭喜！你获得了胜利！', 'success', 5000);
+    }
+
+    /**
+     * 重置UI
+     */
     reset() {
-        this.updateGameStatus('准备开始');
-        this.updateKnifeCounts(0, 0, 0);
-        this.updateButtonStates();
+        this.updatePlayerStats();
+        this.updateKnifeStats();
+        this.updateGameStatus();
+        this.updateControlButtons();
+        console.log('UI已重置');
     }
 
-    // 销毁UI（游戏结束时清理）
+    /**
+     * 销毁UI
+     */
     destroy() {
         // 清理事件监听器等资源
-        this.game = null;
+        console.log('UI已销毁');
     }
 }

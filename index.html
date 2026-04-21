@@ -3,173 +3,302 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>转刀刀 - 像素风格刀战游戏</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <title>转刀刀游戏 - Knife Throwing Game</title>
     <style>
-        /* 像素风格增强样式 */
-        .pixel-border {
-            border: 4px solid #333;
-            border-image:
-                linear-gradient(45deg, #666 25%, transparent 25%, transparent 75%, #666 75%, #666),
-                linear-gradient(45deg, #666 25%, transparent 25%, transparent 75%, #666 75%, #666);
-            border-image-slice: 4;
-            border-image-width: 4px;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .pixel-shadow {
-            box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
-        }
-
-        .pixel-button {
-            border: 3px solid #333;
-            background: linear-gradient(145deg, #e94560, #d63447);
-            color: white;
-            padding: 10px 20px;
+        body {
             font-family: 'Courier New', monospace;
-            font-weight: bold;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.1s;
-            box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(135deg, #0f3460, #1a1a2e);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
-        .pixel-button:hover {
-            transform: translate(2px, 2px);
-            box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
+        .game-container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            border: 4px solid #e94560;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.3);
         }
 
-        .pixel-button:active {
-            transform: translate(3px, 3px);
-            box-shadow: none;
-        }
-
-        .pixel-button:disabled {
-            background: linear-gradient(145deg, #8d93ab, #7a7f94);
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
-        }
-
-        .pixel-text {
-            font-family: 'Courier New', monospace;
-            text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
-            letter-spacing: 1px;
-        }
-
-        .status-indicator {
-            padding: 8px 16px;
-            border: 3px solid #333;
-            background: #16213e;
-            color: #e94560;
-            font-weight: bold;
+        .game-header {
             text-align: center;
-            box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e94560;
+        }
+
+        .game-title {
+            font-size: 2.5rem;
+            color: #e94560;
+            text-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .game-subtitle {
+            font-size: 1.2rem;
+            color: #06d6a0;
+            margin-bottom: 15px;
+        }
+
+        .game-canvas-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        #game-canvas {
+            width: 100%;
+            height: 600px;
+            background: #0f3460;
+            border: 2px solid #06d6a0;
+            border-radius: 10px;
+            cursor: crosshair;
+        }
+
+        .game-status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(233, 69, 96, 0.9);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+        }
+
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            background: linear-gradient(45deg, #e94560, #ff6b95);
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(233, 69, 96, 0.3);
+        }
+
+        .control-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+        }
+
+        .control-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .game-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #06d6a0;
+        }
+
+        .stat-title {
+            font-size: 14px;
+            color: #06d6a0;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .knife-stats {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .knife-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        .knife-red { background: #e94560; }
+        .knife-yellow { background: #ffd166; }
+        .knife-blue { background: #118ab2; }
+
+        .game-instructions {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(6, 214, 160, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .instructions-title {
+            color: #06d6a0;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .instructions-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .instructions-list li {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .instructions-list li:before {
+            content: "⚔️";
+            position: absolute;
+            left: 0;
+        }
+
+        .game-footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #888;
+            font-size: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 15px;
+        }
+
+        .key-hint {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin: 0 2px;
+            font-family: monospace;
+        }
+
+        @media (max-width: 768px) {
+            .game-title {
+                font-size: 2rem;
+            }
+
+            .game-stats {
+                grid-template-columns: 1fr;
+            }
+
+            #game-canvas {
+                height: 400px;
+            }
+        }
+
+        /* 像素风格装饰 */
+        .pixel-border {
+            border-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"><rect width="4" height="4" fill="%2306d6a0"/></svg>') 1 stretch;
+        }
+
+        /* 加载动画 */
+        .loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
     </style>
 </head>
 <body>
-    <div class="game-container pixel-border pixel-shadow">
-        <!-- 顶部游戏标题区域 -->
-        <div class="game-header pixel-border pixel-shadow">
-            <h1 class="pixel-text">转刀刀</h1>
-            <div class="game-description pixel-text">
-                收集刀，击败NPC，成为最强大的刀手！
+    <div class="game-container">
+        <div class="game-header">
+            <h1 class="game-title">🔪 转刀刀游戏</h1>
+            <div class="game-subtitle">Knife Throwing Game</div>
+        </div>
+
+        <div class="game-canvas-container">
+            <canvas id="game-canvas" width="800" height="600"></canvas>
+            <div class="game-status" id="game-status">准备开始游戏</div>
+        </div>
+
+        <div class="game-controls">
+            <button class="control-btn" id="start-btn">开始游戏</button>
+            <button class="control-btn" id="pause-btn" style="display: none;">暂停</button>
+            <button class="control-btn" id="restart-btn" style="display: none;">重新开始</button>
+        </div>
+
+        <div class="game-stats">
+            <div class="stat-card">
+                <div class="stat-title">玩家生命值</div>
+                <div class="stat-value" id="player-hp">100</div>
             </div>
-        </div>
 
-        <!-- 游戏状态指示器 -->
-        <div class="status-indicator">
-            <span id="game-status">准备开始游戏</span>
-        </div>
-
-        <!-- 主游戏画布 -->
-        <canvas id="game-canvas" width="800" height="600" class="pixel-border pixel-shadow"></canvas>
-
-        <!-- 游戏信息面板 -->
-        <div class="game-ui pixel-border pixel-shadow">
-            <!-- 玩家统计信息 -->
-            <div class="stat-panel pixel-border">
-                <div class="stat-label pixel-text">玩家状态</div>
-                <div class="player-stats">
-                    <div class="stat-row">
-                        <span class="stat-name">生命值:</span>
-                        <span id="player-hp" class="stat-value">100</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">总刀数:</span>
-                        <span id="total-knives" class="stat-value">0</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-name">击败NPC:</span>
-                        <span id="defeated-npcs" class="stat-value">0</span>
-                    </div>
+            <div class="stat-card">
+                <div class="stat-title">刀收集统计</div>
+                <div class="knife-stats">
+                    <span class="knife-icon knife-red"></span>
+                    <span id="red-knives">0</span>
+                    <span class="knife-icon knife-yellow"></span>
+                    <span id="yellow-knives">0</span>
+                    <span class="knife-icon knife-blue"></span>
+                    <span id="blue-knives">0</span>
                 </div>
             </div>
 
-            <!-- 刀收集统计 -->
-            <div class="stat-panel pixel-border">
-                <div class="stat-label pixel-text">刀收集</div>
-                <div class="knife-counts">
-                    <div class="knife-count">
-                        <div class="knife-color red pixel-border"></div>
-                        <span class="knife-label pixel-text">红刀:</span>
-                        <span id="red-knives" class="knife-value">0</span>
-                    </div>
-                    <div class="knife-count">
-                        <div class="knife-color yellow pixel-border"></div>
-                        <span class="knife-label pixel-text">黄刀:</span>
-                        <span id="yellow-knives" class="knife-value">0</span>
-                    </div>
-                    <div class="knife-count">
-                        <div class="knife-color blue pixel-border"></div>
-                        <span class="knife-label pixel-text">蓝刀:</span>
-                        <span id="blue-knives" class="knife-value">0</span>
-                    </div>
-                </div>
+            <div class="stat-card">
+                <div class="stat-title">击败NPC</div>
+                <div class="stat-value" id="defeated-npcs">0</div>
             </div>
 
-            <!-- 游戏控制 -->
-            <div class="stat-panel pixel-border">
-                <div class="stat-label pixel-text">游戏控制</div>
-                <div class="controls">
-                    <button id="start-btn" class="pixel-button">开始游戏</button>
-                    <button id="restart-btn" class="pixel-button" disabled>重新开始</button>
-                    <button id="pause-btn" class="pixel-button" disabled>暂停</button>
-                </div>
+            <div class="stat-card">
+                <div class="stat-title">游戏分数</div>
+                <div class="stat-value" id="game-score">0</div>
             </div>
         </div>
 
-        <!-- 游戏说明 -->
-        <div class="instructions pixel-border pixel-shadow">
-            <h3 class="pixel-text">游戏说明</h3>
-            <ul class="pixel-text">
-                <li>• 使用方向键移动角色</li>
-                <li>• 收集红色、黄色、蓝色三种刀</li>
-                <li>• 红色刀伤害最高（红=黄×2=蓝×4）</li>
-                <li>• NPC会主动攻击你</li>
-                <li>• 击败NPC获得他们收集的刀</li>
-                <li>• 地图随机生成，每次游戏都不同</li>
-                <li>• 小心！被NPC击败游戏结束</li>
+        <div class="game-instructions">
+            <div class="instructions-title">游戏说明</div>
+            <ul class="instructions-list">
+                <li><strong>移动控制：</strong>使用 <span class="key-hint">WASD</span> 或 <span class="key-hint">方向键</span> 移动角色</li>
+                <li><strong>游戏控制：</strong>按 <span class="key-hint">P</span> 暂停/继续，按 <span class="key-hint">R</span> 重新开始</li>
+                <li><strong>游戏目标：</strong>收集刀提升攻击力，击败所有NPC敌人</li>
+                <li><strong>刀类型：</strong>红刀(+15%) 黄刀(+25%) 蓝刀(+35%) 攻击力加成</li>
+                <li><strong>提示：</strong>避免与NPC碰撞，收集更多刀来提升伤害</li>
             </ul>
         </div>
 
-        <!-- 游戏日志 -->
-        <div class="game-log pixel-border pixel-shadow">
-            <h4 class="pixel-text">游戏日志</h4>
-            <div id="game-log" class="log-content">
-                <div class="log-entry">欢迎来到转刀刀游戏！</div>
-            </div>
+        <div class="game-footer">
+            <p>转刀刀游戏 v1.0 | 基于HTML5 Canvas开发 | 像素风格动作游戏</p>
+            <p>按 <span class="key-hint">Ctrl+D</span> 开启调试模式</p>
         </div>
     </div>
 
-    <!-- JavaScript文件引入 -->
-    <script src="src/game/Game.js"></script>
-    <script src="src/entities/Player.js"></script>
-    <script src="src/entities/NPC.js"></script>
-    <script src="src/map/MapGenerator.js"></script>
-    <script src="src/combat/CombatSystem.js"></script>
-    <script src="src/ui/GameUI.js"></script>
-    <script src="src/performance/OptimizationManager.js"></script>
-    <script src="src/main.js"></script>
+    <!-- 游戏脚本 -->
+    <script type="module" src="./src/main.js"></script>
 </body>
 </html>

@@ -1,79 +1,47 @@
-// 转刀刀游戏主入口文件
+/**
+ * 转刀刀游戏 - 主入口文件
+ * 负责游戏初始化和启动
+ */
+
+import { Game } from './game/Game.js';
+
+// 游戏实例
+let game = null;
 
 // 页面加载完成后初始化游戏
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('转刀刀游戏开始初始化...');
+    console.log('转刀刀游戏正在初始化...');
 
-    // 等待所有脚本加载完成
-    setTimeout(() => {
-        try {
-            // 检查关键类是否已加载
-            if (typeof Game === 'undefined') {
-                console.error('Game class not found');
-                return;
+    try {
+        // 创建游戏实例
+        game = new Game('game-canvas');
+
+        // 显示初始化完成消息
+        console.log('游戏初始化完成！');
+        console.log('游戏控制：');
+        console.log('- 移动: WASD 或 方向键');
+        console.log('- 暂停/继续: P 键');
+        console.log('- 重新开始: R 键');
+        console.log('- 调试模式: Ctrl + D');
+
+        // 添加全局错误处理
+        window.addEventListener('error', (event) => {
+            console.error('游戏运行时错误:', event.error);
+            alert('游戏出现错误，请刷新页面重试。错误信息：' + event.error.message);
+        });
+
+        // 页面卸载时清理资源
+        window.addEventListener('beforeunload', () => {
+            if (game) {
+                game.destroy();
             }
-            if (typeof GameUI === 'undefined') {
-                console.error('GameUI class not found');
-                return;
-            }
+        });
 
-            // 初始化游戏实例
-            const game = new Game();
-            const ui = new GameUI(game);
-
-            // 绑定UI事件
-            const startBtn = document.getElementById('start-btn');
-            const restartBtn = document.getElementById('restart-btn');
-            const pauseBtn = document.getElementById('pause-btn');
-
-            if (startBtn) {
-                startBtn.addEventListener('click', () => {
-                    console.log('开始游戏按钮被点击');
-                    game.start();
-                    startBtn.disabled = true;
-                    if (restartBtn) restartBtn.disabled = false;
-                    if (pauseBtn) pauseBtn.disabled = false;
-                });
-            }
-
-            if (restartBtn) {
-                restartBtn.addEventListener('click', () => {
-                    console.log('重新开始按钮被点击');
-                    game.stop();
-                    game.resetGame();
-                    game.start();
-                    if (ui) ui.reset();
-                });
-            }
-
-            if (pauseBtn) {
-                pauseBtn.addEventListener('click', () => {
-                    console.log('暂停按钮被点击');
-                    if (game.isRunning) {
-                        game.stop();
-                        pauseBtn.textContent = '继续';
-                    } else {
-                        game.start();
-                        pauseBtn.textContent = '暂停';
-                    }
-                });
-            }
-
-            // 将游戏实例保存到全局变量
-            window.knifeGame = game;
-            window.gameUI = ui;
-
-            console.log('转刀刀游戏初始化完成！');
-
-        } catch (error) {
-            console.error('游戏初始化失败:', error);
-
-            // 显示错误信息给用户
-            const statusElem = document.getElementById('game-status');
-            if (statusElem) {
-                statusElem.textContent = '游戏初始化失败，请刷新页面重试';
-                statusElem.style.color = 'red';
-            }
-        }
-    }, 100); // 延迟100ms确保所有脚本已加载
+    } catch (error) {
+        console.error('游戏初始化失败:', error);
+        alert('游戏初始化失败，请检查浏览器控制台获取详细信息。');
+    }
 });
+
+// 导出游戏实例供调试使用
+window.game = game;

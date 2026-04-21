@@ -1,257 +1,353 @@
-# 转刀刀网页游戏 - 项目文档
+# 转刀刀游戏 - 项目文档
 
 ## 项目概述
 
-转刀刀是一款基于HTML5 Canvas的单机网页游戏，实现了玩家控制角色在随机生成的地图上收集不同颜色的刀，并与主动攻击的NPC进行战斗的核心游戏机制。
+转刀刀游戏是一个基于HTML5 Canvas开发的像素风格动作游戏。玩家需要收集不同类型的刀来提升攻击力，击败各种NPC敌人，完成游戏目标。
 
-## 技术实现架构
+### 核心特性
+- 🎮 像素艺术风格游戏
+- 🔪 多样化的刀收集系统
+- 🤖 智能NPC AI行为
+- 🗺️ 随机地图生成
+- ⚔️ 完整的战斗系统
+- 🎯 实时UI界面
+- ⚡ 性能优化机制
 
-### 核心系统架构
+## 技术架构
 
+### 技术栈
+- **前端技术**：HTML5, CSS3, JavaScript (ES6+)
+- **游戏引擎**：HTML5 Canvas
+- **架构模式**：模块化设计，面向对象编程
+- **开发工具**：现代浏览器开发工具
+
+### 系统架构图
 ```
-游戏系统架构图：
-┌─────────────────┐
-│    HTML/CSS     │ ← 像素风格界面
-└─────────────────┘
-        ↓
-┌─────────────────┐
-│  Canvas渲染器   │ ← 游戏画面渲染
-└─────────────────┘
-        ↓
-┌─────────────────┐
-│   游戏主循环     │ ← 核心游戏逻辑
-└─────────────────┘
-        ↓
-┌─────────────────┐
-│ 实体管理系统     │ ← 玩家/NPC/刀管理
-└─────────────────┘
-        ↓
-┌─────────────────┐
-│ 性能优化系统     │ ← 动态性能调整
-└─────────────────┘
+转刀刀游戏架构
+├── 表示层 (Presentation Layer)
+│   ├── HTML页面 (index.html)
+│   ├── CSS样式 (内联样式)
+│   └── Canvas渲染
+├── 应用层 (Application Layer)
+│   ├── 游戏主类 (Game.js)
+│   ├── 游戏循环管理
+│   └── 事件处理系统
+├── 领域层 (Domain Layer)
+│   ├── 游戏实体 (Player, NPC, Knife)
+│   ├── 游戏系统 (Combat, Map, UI)
+│   └── 工具类 (PerformanceOptimizer)
+└── 基础设施层 (Infrastructure Layer)
+    ├── 浏览器API集成
+    ├── 本地存储支持
+    └── 性能监控
 ```
 
-### 核心模块详解
+## 核心模块详细说明
 
-#### 1. 游戏主循环系统 (Game.js)
-- **职责**：管理游戏状态、协调各系统运行
-- **核心功能**：
-  - 游戏循环管理 (60FPS)
-  - 实体更新和渲染调度
-  - 碰撞检测和战斗触发
-  - 游戏状态管理
+### 1. 游戏主类 (Game.js)
 
-#### 2. 玩家控制系统 (Player.js)
-- **职责**：处理玩家输入和角色行为
-- **核心功能**：
-  - 键盘输入处理 (WASD/方向键)
-  - 移动控制和碰撞检测
-  - 刀收集系统
-  - 攻击力计算
+**职责**：游戏的总控制器，协调所有子系统
 
-#### 3. NPC人工智能系统 (NPC.js)
-- **职责**：实现NPC的智能行为
-- **核心功能**：
-  - 主动追踪玩家算法
-  - 智能移动决策
-  - 战斗行为逻辑
-  - 刀掉落系统
+**主要功能**：
+- 游戏状态管理（ready, playing, paused, gameOver, won）
+- 游戏循环控制（基于requestAnimationFrame）
+- 子系统初始化和协调
+- 事件监听和处理
 
-#### 4. 地图生成系统 (MapGenerator.js)
-- **职责**：生成随机可玩的地图
-- **核心功能**：
-  - 随机障碍物生成
-  - 地图连通性检查
-  - 可通行区域验证
-
-#### 5. 战斗计算系统 (CombatSystem.js)
-- **职责**：处理战斗逻辑和伤害计算
-- **核心功能**：
-  - 基于刀颜色的伤害公式
-  - 暴击和防御机制
-  - 战斗结果判定
-
-#### 6. 用户界面系统 (GameUI.js)
-- **职责**：管理游戏界面显示
-- **核心功能**：
-  - 游戏状态显示
-  - 刀数量统计
-  - 战斗信息展示
-
-#### 7. 性能优化系统 (OptimizationManager.js)
-- **职责**：确保游戏流畅运行
-- **核心功能**：
-  - 动态NPC数量控制
-  - 脏矩形渲染优化
-  - 空间分割碰撞检测
-
-## 核心算法实现
-
-### 1. 随机地图生成算法
-
+**关键方法**：
 ```javascript
-// 基于洪水填充算法的连通性检查
-function ensureAccessibility() {
-    const visited = Array(mapHeight).fill().map(() => Array(mapWidth).fill(false));
-    const queue = [findStartPosition()];
-    let accessibleCells = 0;
-    
-    while (queue.length > 0) {
-        const current = queue.shift();
-        accessibleCells++;
-        
-        // 检查四个方向
-        for (const dir of directions) {
-            const newPos = { x: current.x + dir.dx, y: current.y + dir.dy };
-            if (isValidPosition(newPos) && !visited[newPos.y][newPos.x]) {
-                visited[newPos.y][newPos.x] = true;
-                queue.push(newPos);
-            }
-        }
-    }
-    
-    return accessibleCells / totalCells >= 0.6; // 至少60%可通行
+class Game {
+    init()          // 初始化游戏
+    start()         // 开始游戏
+    restart()       // 重新开始游戏
+    update()        // 更新游戏逻辑
+    render()        // 渲染游戏画面
+    destroy()       // 清理资源
 }
 ```
 
-### 2. NPC追踪算法
+### 2. 玩家角色 (Player.js)
 
+**职责**：代表玩家控制的角色
+
+**属性**：
+- 位置坐标 (x, y)
+- 生命值系统 (hp, maxHp)
+- 刀收集状态 (knives)
+- 移动速度 (speed)
+
+**行为**：
+- 键盘控制移动
+- 与NPC碰撞检测
+- 刀收集逻辑
+- 生命值管理
+
+### 3. NPC系统 (NPC.js)
+
+**职责**：非玩家角色的AI和行为管理
+
+**NPC类型**：
+- **普通NPC**：均衡型敌人
+- **快速NPC**：高速移动，低生命值
+- **强力NPC**：高生命值，强力攻击
+
+**AI状态机**：
+```
+游荡 (Wander) → 检测玩家 → 追逐 (Chase) → 攻击范围 → 攻击 (Attack)
+    ↓                                    ↓
+生命值低 → 逃跑 (Flee) ← 被攻击 ← 战斗状态
+```
+
+### 4. 刀系统 (Knife.js)
+
+**职责**：刀的生成、收集和效果管理
+
+**刀类型**：
+- **红刀**：基础加成（15%）
+- **黄刀**：中等加成（25%）
+- **蓝刀**：高级加成（35%）
+
+**生成机制**：
+- NPC死亡概率掉落
+- 定时生成
+- 最大数量限制
+
+### 5. 战斗系统 (CombatSystem.js)
+
+**职责**：处理所有战斗相关的计算
+
+**伤害计算公式**：
+```
+总伤害 = 基础伤害 × (1 + 刀加成总和) × 暴击倍数
+```
+
+**暴击系统**：
+- 基础暴击概率：12%
+- 暴击倍数：2.2倍
+- 随机性确保战斗多样性
+
+### 6. 地图生成器 (MapGenerator.js)
+
+**职责**：生成随机游戏地图
+
+**生成算法**：
+- 基于网格的地图生成
+- 障碍物和可通行区域划分
+- 玩家出生点优化
+- 实体分布算法
+
+### 7. UI系统 (UISystem.js)
+
+**职责**：管理游戏用户界面
+
+**界面组件**：
+- 生命值条显示
+- 刀收集统计
+- 游戏状态信息
+- 控制按钮管理
+
+**渲染层次**：
+```
+Canvas渲染层
+├── 背景层 (地图)
+├── 实体层 (NPC, 刀, 玩家)
+├── 特效层 (战斗特效)
+└── UI层 (HUD界面)
+```
+
+### 8. 性能优化器 (PerformanceOptimizer.js)
+
+**职责**：监控和优化游戏性能
+
+**优化策略**：
+- FPS监控和动态调整
+- 对象池管理减少内存分配
+- 实体清理机制
+- 碰撞检测优化
+
+## 游戏数据流
+
+### 1. 游戏启动流程
+```
+用户点击开始 → Game.init() → 初始化所有系统 → 进入ready状态
+```
+
+### 2. 游戏主循环
+```
+requestAnimationFrame → Game.loop() → Game.update() → Game.render()
+```
+
+### 3. 玩家交互流程
+```
+键盘输入 → 事件监听 → Player.update() → 位置更新 → 碰撞检测
+```
+
+### 4. NPC行为流程
+```
+NPC.update() → AI决策 → 状态转换 → 行为执行 → 碰撞检测
+```
+
+### 5. 战斗流程
+```
+玩家与NPC碰撞 → CombatSystem.calculateDamage() → 生命值减少 → 状态检查
+```
+
+## 配置文件说明
+
+### 游戏配置 (Game.js)
 ```javascript
-// 基于曼哈顿距离的追踪算法
-function moveTowardsPlayer() {
-    const distanceToPlayer = Math.abs(this.position.x - player.position.x) + 
-                           Math.abs(this.position.y - player.position.y);
-    
-    if (distanceToPlayer <= 5) {
-        // 在攻击范围内，主动接近
-        const directions = [];
-        if (this.position.x < player.position.x) directions.push('right');
-        if (this.position.x > player.position.x) directions.push('left');
-        if (this.position.y < player.position.y) directions.push('down');
-        if (this.position.y > player.position.y) directions.push('up');
-        
-        if (directions.length > 0) {
-            const direction = directions[Math.floor(Math.random() * directions.length)];
-            this.moveInDirection(direction);
-        }
-    } else {
-        // 距离较远，随机移动
-        this.randomMove();
-    }
+config: {
+    canvasWidth: 800,      // 画布宽度
+    canvasHeight: 600,     // 画布高度
+    fps: 60,              // 目标帧率
+    maxNpcs: 8,           // 最大NPC数量
+    maxKnives: 20         // 最大刀数量
 }
 ```
 
-### 3. 伤害计算公式
-
+### 玩家配置 (Player.js)
 ```javascript
-// 基于刀颜色和数量的伤害计算
-function calculateAttackPower(entity) {
-    let totalPower = 0;
-    
-    // 伤害倍率：红=4，黄=2，蓝=1
-    const multipliers = { red: 4, yellow: 2, blue: 1 };
-    
-    for (const color in entity.knives) {
-        const count = entity.knives[color];
-        const multiplier = multipliers[color];
-        
-        // 基础伤害 + 颜色倍率 + 伤害衰减
-        const colorPower = count * multiplier * this.config.baseDamage * 
-                         this.calculateDecayFactor(entity.getTotalKnives());
-        totalPower += colorPower;
-    }
-    
-    return Math.round(totalPower * 10) / 10; // 保留一位小数
+playerConfig: {
+    maxHp: 80,            // 最大生命值
+    speed: 5,             // 移动速度
+    collisionDamage: 6     // 碰撞伤害
+}
+```
+
+### NPC配置 (NPC.js)
+```javascript
+npcTypes: {
+    normal: { hp: 60, damage: 8, speed: 2 },
+    fast: { hp: 25, damage: 6, speed: 4 },
+    strong: { hp: 120, damage: 12, speed: 1.5 }
+}
+```
+
+### 战斗配置 (CombatSystem.js)
+```javascript
+damageConfig: {
+    playerBaseDamage: 12,
+    criticalChance: 0.12,
+    criticalMultiplier: 2.2
 }
 ```
 
 ## 性能优化策略
 
-### 1. 动态NPC管理
-- **策略**：根据当前FPS动态调整NPC数量
-- **实现**：当FPS低于45时，减少NPC数量至70%
-- **效果**：确保游戏流畅运行
+### 1. 渲染优化
+- **批处理渲染**：减少Canvas API调用次数
+- **精灵图优化**：使用精灵图减少绘制调用
+- **视锥体剔除**：只渲染可见区域的实体
 
-### 2. 脏矩形渲染
-- **策略**：只重绘发生变化的部分
-- **实现**：跟踪实体位置变化，计算需要重绘的区域
-- **效果**：减少70%的渲染开销
+### 2. 内存优化
+- **对象池**：重用游戏对象减少内存分配
+- **及时清理**：自动清理死亡实体
+- **缓存优化**：缓存计算结果减少重复计算
 
-### 3. 空间分割碰撞检测
-- **策略**：将地图划分为网格，只检查相邻网格的碰撞
-- **实现**：5x5网格系统，减少碰撞检测复杂度
-- **效果**：O(n)复杂度降低到O(1)平均复杂度
+### 3. 计算优化
+- **空间分割**：优化碰撞检测性能
+- **增量更新**：只更新发生变化的部分
+- **LOD系统**：根据距离调整细节层次
 
-## 测试覆盖策略
+### 4. 网络优化（未来扩展）
+- **资源预加载**：提前加载游戏资源
+- **压缩传输**：减少数据传输量
+- **缓存策略**：合理使用浏览器缓存
 
-### 单元测试覆盖
-- **游戏核心逻辑**：Game.js - 100%覆盖
-- **地图生成算法**：MapGenerator.js - 95%覆盖
-- **战斗系统**：CombatSystem.js - 90%覆盖
-- **实体行为**：Player.js/NPC.js - 85%覆盖
+## 扩展性设计
 
-### 集成测试
-- **游戏启动流程**：验证各系统正确初始化
-- **战斗交互**：测试玩家与NPC的战斗逻辑
-- **性能测试**：验证游戏循环稳定性
-
-## 部署和运行
-
-### 开发环境
-```bash
-# 安装依赖
-npm install
-
-# 运行测试
-npm test
-
-# 启动开发服务器
-npx http-server .
-```
-
-### 生产部署
-1. 静态文件部署到Web服务器
-2. 配置正确的MIME类型
-3. 确保Canvas和JavaScript支持
-
-## 扩展性和维护性
-
-### 模块化设计
-- 每个系统独立封装，便于维护和扩展
+### 1. 模块化架构
+- 每个系统独立，易于替换和扩展
 - 清晰的接口定义，降低耦合度
-- 统一的配置管理
+- 支持插件式开发
 
-### 代码质量
-- 遵循JavaScript最佳实践
-- 完整的错误处理机制
-- 详细的代码注释
+### 2. 配置驱动
+- 游戏参数集中配置
+- 支持运行时调整
+- 便于平衡性测试
 
-## 技术决策说明
+### 3. 事件系统
+- 松耦合的事件通信
+- 支持自定义事件
+- 便于功能扩展
 
-### 选择HTML5 Canvas的原因
-1. **性能优势**：相比DOM操作，Canvas更适合游戏渲染
-2. **跨平台兼容**：所有现代浏览器都支持Canvas
-3. **灵活性**：完全控制渲染流程
+### 4. 数据驱动
+- 实体数据与逻辑分离
+- 支持外部数据导入
+- 便于内容更新
 
-### 不使用游戏引擎的原因
-1. **学习成本**：原生实现更易于理解和维护
-2. **定制性**：完全控制游戏逻辑和性能优化
-3. **包大小**：避免引入不必要的依赖
+## 测试策略
 
-## 未来扩展方向
+### 1. 单元测试
+- 每个模块独立测试
+- 覆盖核心算法
+- 确保功能正确性
 
-### 功能扩展
-1. **多人模式**：添加网络对战功能
-2. **关卡系统**：设计不同的游戏关卡
-3. **成就系统**：添加游戏成就和排行榜
+### 2. 集成测试
+- 模块间交互测试
+- 游戏流程测试
+- 性能基准测试
 
-### 技术优化
-1. **WebGL渲染**：提升图形渲染性能
-2. **Web Workers**：将计算密集型任务移出主线程
-3. **Service Worker**：实现离线游戏功能
+### 3. 用户测试
+- 游戏平衡性测试
+- 用户体验测试
+- 兼容性测试
+
+## 部署说明
+
+### 1. 开发环境
+- 现代浏览器（Chrome, Firefox, Safari, Edge）
+- 本地文件服务器（可选）
+- 开发者工具支持
+
+### 2. 生产环境
+- 静态文件托管
+- CDN加速（可选）
+- 浏览器兼容性处理
+
+### 3. 打包优化
+- 代码压缩和混淆
+- 资源合并和优化
+- 缓存策略配置
+
+## 维护指南
+
+### 1. 日常维护
+- 定期检查性能指标
+- 更新依赖库版本
+- 修复已知问题
+
+### 2. 版本管理
+- 使用语义化版本号
+- 维护变更日志
+- 分支管理策略
+
+### 3. 问题处理
+- 错误日志收集
+- 用户反馈处理
+- 紧急修复流程
+
+## 未来规划
+
+### 短期目标（1-3个月）
+- [ ] 添加音效系统
+- [ ] 实现粒子特效
+- [ ] 增加更多游戏模式
+
+### 中期目标（3-6个月）
+- [ ] 添加多人游戏支持
+- [ ] 实现成就系统
+- [ ] 开发移动端版本
+
+### 长期目标（6-12个月）
+- [ ] 构建游戏社区
+- [ ] 开发关卡编辑器
+- [ ] 支持用户生成内容
 
 ---
 
-**文档版本**: v1.0.0  
-**最后更新**: 2026-04-21  
-**维护者**: Claude Code
+**文档版本**：v1.0  
+**最后更新**：2026-04-21  
+**维护团队**：开发团队  
+
+*本文档将随项目发展持续更新*

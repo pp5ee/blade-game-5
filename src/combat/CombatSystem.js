@@ -1,223 +1,219 @@
-// 战斗伤害计算系统类
-class CombatSystem {
-    constructor() {
+/**
+ * 转刀刀游戏 - 战斗系统模块
+ * 负责伤害计算、战斗效果和特殊能力
+ */
+
+export class CombatSystem {
+    constructor(game) {
+        this.game = game;
+
         // 战斗配置
         this.config = {
-            damageMultipliers: {
-                red: 4,    // 红色刀伤害倍率
-                yellow: 2, // 黄色刀伤害倍率
-                blue: 1    // 蓝色刀伤害倍率
-            },
-            baseDamage: 0.5, // 基础伤害值调整为0.5，使伤害计算更平滑
-            criticalChance: 0.1, // 暴击概率
-            criticalMultiplier: 2, // 暴击倍率
-            damageDecayFactor: 0.9, // 伤害衰减系数（每增加一把刀，边际伤害减少10%）
-            maxKnivesForDecay: 10, // 伤害衰减的最大刀数量限制
-            minDamageMultiplier: 0.3 // 最小伤害倍率
-        };
-    }
-
-    // 解析战斗结果
-    resolveCombat(attacker, defender) {
-        if (!attacker || !defender || !attacker.isAlive || !defender.isAlive) {
-            console.log('战斗无效：至少一方已死亡或不存在');
-            return {
-                winner: null,
-                damage: 0,
-                critical: false,
-                attackerPower: 0,
-                defenderPower: 0,
-                attackerDamage: 0,
-                defenderDamage: 0
-            };
-        }
-
-        // 计算双方攻击力
-        const attackerPower = this.calculateAttackPower(attacker);
-        const defenderPower = this.calculateAttackPower(defender);
-
-        console.log(`战斗开始 - 攻击方力量: ${attackerPower}, 防御方力量: ${defenderPower}`);
-
-        // 计算伤害
-        const attackerDamage = this.calculateDamage(attackerPower, defenderPower);
-        const defenderDamage = this.calculateDamage(defenderPower, attackerPower);
-
-        // 决定战斗结果
-        let winner = null;
-        let damageDealt = 0;
-        let criticalHit = false;
-        let playerWon = false;
-
-        if (attackerDamage > defenderDamage) {
-            winner = 'attacker';
-            damageDealt = attackerDamage - defenderDamage;
-            criticalHit = this.isCriticalHit(attackerPower, defenderPower);
-            playerWon = (attacker === window.knifeGame?.player);
-
-            // 应用伤害结果
-            if (defender === window.knifeGame?.player) {
-                // 玩家被攻击
-                console.log(`玩家受到 ${damageDealt} 点伤害`);
-                if (criticalHit) console.log('暴击！');
-            } else {
-                // NPC被攻击
-                console.log(`NPC被击败，掉落刀`);
-            }
-
-        } else if (defenderDamage > attackerDamage) {
-            winner = 'defender';
-            damageDealt = defenderDamage - attackerDamage;
-            criticalHit = this.isCriticalHit(defenderPower, attackerPower);
-            playerWon = (defender === window.knifeGame?.player);
-
-            // 应用伤害结果
-            if (attacker === window.knifeGame?.player) {
-                // 玩家攻击失败
-                console.log(`玩家攻击失败，受到 ${damageDealt} 点反击伤害`);
-            } else {
-                // NPC攻击失败
-                console.log(`NPC攻击失败`);
-            }
-
-        } else {
-            // 平局，双方都不获胜
-            winner = 'draw';
-            console.log('战斗平局');
-        }
-
-        const result = {
-            winner: winner,
-            damage: damageDealt,
-            critical: criticalHit,
-            playerWon: playerWon,
-            attackerPower: attackerPower,
-            defenderPower: defenderPower,
-            attackerDamage: attackerDamage,
-            defenderDamage: defenderDamage
+            baseDamage: 10,
+            criticalChance: 0.1,
+            criticalMultiplier: 2,
+            dodgeChance: 0.05,
+            comboMultiplier: 1.0
         };
 
-        // 显示战斗信息
-        if (window.gameUI) {
-            window.gameUI.showCombatInfo(attacker, defender, result);
-        }
+        // 战斗状态
+        this.comboCount = 0;
+        this.lastComboTime = 0;
+        this.comboTimeout = 3000; // 3秒连击超时
 
-        return result;
+        console.log('战斗系统初始化完成');
     }
 
-    // 计算实体攻击力（带伤害衰减）
-    calculateAttackPower(entity) {
-        let totalPower = 0;
-        const totalKnives = entity.getTotalKnives();
+    /**
+     * 计算伤害
+     */
+    calculateDamage(attacker, target, knifeType = null) {
+        let damage = this.config.baseDamage;
 
-        // 计算伤害衰减因子
-        const decayFactor = this.calculateDecayFactor(totalKnives);
-
-        // 根据刀颜色计算攻击力
-        for (const color in entity.knives) {
-            if (entity.knives.hasOwnProperty(color)) {
-                const count = entity.knives[color];
-                const multiplier = this.config.damageMultipliers[color] || 1;
-                
-                // 应用伤害衰减
-                const colorPower = count * multiplier * this.config.baseDamage * decayFactor;
-                totalPower += colorPower;
-            }
+        // 根据攻击者属性调整伤害
+        if (attacker.attackPower) {
+            damage *= (attacker.attackPower / 10);
         }
 
-        // 如果没有刀，攻击力为0
-        if (totalPower === 0) {
+        // 根据刀类型调整伤害
+        if (knifeType) {
+            damage *= this.getKnifeMultiplier(knifeType);
+        }
+
+        // 连击加成
+        damage *= this.config.comboMultiplier;
+
+        // 暴击判定
+        if (Math.random() < this.config.criticalChance) {
+            damage *= this.config.criticalMultiplier;
+            console.log('暴击！伤害翻倍');
+        }
+
+        // 闪避判定
+        if (Math.random() < this.config.dodgeChance) {
+            console.log(`${target.constructor.name} 闪避了攻击！`);
             return 0;
         }
 
-        return Math.round(totalPower * 10) / 10; // 保留一位小数
-    }
+        // 确保最小伤害
+        damage = Math.max(1, Math.round(damage));
 
-    // 计算伤害衰减因子
-    calculateDecayFactor(totalKnives) {
-        if (totalKnives <= 1) {
-            return 1.0; // 第一把刀没有衰减
-        }
-
-        // 指数衰减：每增加一把刀，边际伤害减少
-        const knivesForDecay = Math.min(totalKnives - 1, this.config.maxKnivesForDecay);
-        const decayFactor = Math.pow(this.config.damageDecayFactor, knivesForDecay);
-        
-        // 确保最小伤害倍率
-        return Math.max(decayFactor, this.config.minDamageMultiplier);
-    }
-
-    // 计算实际伤害
-    calculateDamage(attackerPower, defenderPower) {
-        if (attackerPower === 0) {
-            return 0;
-        }
-
-        // 基础伤害计算
-        let damage = attackerPower;
-
-        // 防御力减免（基于双方力量对比的曲线减免）
-        const powerRatio = defenderPower / (attackerPower + defenderPower);
-        const defenseReduction = damage * (0.1 + powerRatio * 0.3); // 10%-40%的减免
-        damage -= defenseReduction;
-
-        // 确保伤害至少为1
-        damage = Math.max(1, damage);
-
-        // 随机波动（±15%）
-        const randomFactor = 0.85 + Math.random() * 0.3;
-        damage = Math.round(damage * randomFactor);
-
+        console.log(`造成 ${damage} 点伤害`);
         return damage;
     }
 
-    // 检查是否暴击
-    isCriticalHit(attackerPower, defenderPower) {
-        // 暴击概率基于攻击力优势
-        const advantage = attackerPower / (attackerPower + defenderPower);
-        const criticalChance = this.config.criticalChance * advantage;
-
-        return Math.random() < criticalChance;
-    }
-
-    // 获取伤害倍率信息（用于UI显示）
-    getDamageMultiplierInfo() {
-        return {
-            red: this.config.damageMultipliers.red,
-            yellow: this.config.damageMultipliers.yellow,
-            blue: this.config.damageMultipliers.blue,
-            baseDamage: this.config.baseDamage,
-            decayFactor: this.config.damageDecayFactor
+    /**
+     * 根据刀类型获取伤害倍率
+     */
+    getKnifeMultiplier(knifeType) {
+        const multiplierMap = {
+            red: 1.0,    // 标准伤害
+            yellow: 1.5, // 高伤害
+            blue: 0.8    // 低伤害但附加效果
         };
+        return multiplierMap[knifeType] || 1.0;
     }
 
-    // 格式化战斗日志
-    formatCombatLog(attacker, defender, result) {
-        const attackerName = attacker === window.knifeGame?.game?.player ? '玩家' : 'NPC';
-        const defenderName = defender === window.knifeGame?.game?.player ? '玩家' : 'NPC';
+    /**
+     * 处理攻击
+     */
+    handleAttack(attacker, target, knifeType = null) {
+        // 计算伤害
+        const damage = this.calculateDamage(attacker, target, knifeType);
 
-        let log = `${attackerName} vs ${defenderName}\n`;
-        log += `攻击力: ${result.attackerPower} vs ${result.defenderPower}\n`;
-        log += `伤害: ${result.attackerDamage} vs ${result.defenderDamage}\n`;
+        if (damage > 0) {
+            // 应用伤害
+            target.takeDamage(damage);
 
-        if (result.winner === 'attacker') {
-            log += `胜利者: ${attackerName}`;
-            if (result.critical) {
-                log += ' (暴击!)';
-            }
-        } else if (result.winner === 'defender') {
-            log += `胜利者: ${defenderName}`;
-            if (result.critical) {
-                log += ' (暴击!)';
-            }
-        } else {
-            log += '战斗平局';
+            // 更新连击
+            this.updateCombo();
+
+            // 播放攻击效果
+            this.playAttackEffect(attacker, target, damage);
+
+            return damage;
         }
 
-        return log;
+        return 0;
     }
 
-    // 重置战斗系统（用于游戏重置）
+    /**
+     * 更新连击计数
+     */
+    updateCombo() {
+        const currentTime = Date.now();
+
+        // 检查连击是否超时
+        if (currentTime - this.lastComboTime > this.comboTimeout) {
+            this.comboCount = 0;
+            this.config.comboMultiplier = 1.0;
+        }
+
+        // 增加连击计数
+        this.comboCount++;
+        this.lastComboTime = currentTime;
+
+        // 更新连击倍率
+        this.config.comboMultiplier = 1.0 + (this.comboCount * 0.1);
+
+        console.log(`连击: ${this.comboCount}, 伤害倍率: ${this.config.comboMultiplier.toFixed(1)}x`);
+    }
+
+    /**
+     * 播放攻击效果
+     */
+    playAttackEffect(attacker, target, damage) {
+        // 攻击效果逻辑将在后续任务中实现
+        console.log(`攻击效果: ${attacker.constructor.name} → ${target.constructor.name}, 伤害: ${damage}`);
+
+        // 显示伤害数字
+        this.showDamageNumber(target, damage);
+
+        // 播放攻击动画
+        this.playAttackAnimation(attacker, target);
+    }
+
+    /**
+     * 显示伤害数字
+     */
+    showDamageNumber(target, damage) {
+        // 伤害数字显示逻辑将在后续任务中实现
+        console.log(`在 ${target.x}, ${target.y} 显示伤害数字: ${damage}`);
+    }
+
+    /**
+     * 播放攻击动画
+     */
+    playAttackAnimation(attacker, target) {
+        // 攻击动画逻辑将在后续任务中实现
+        console.log(`播放 ${attacker.constructor.name} 攻击动画`);
+    }
+
+    /**
+     * 处理特殊能力
+     */
+    handleSpecialAbility(attacker, abilityType) {
+        const abilities = {
+            red: this.redKnifeAbility.bind(this),
+            yellow: this.yellowKnifeAbility.bind(this),
+            blue: this.blueKnifeAbility.bind(this)
+        };
+
+        if (abilities[abilityType]) {
+            abilities[abilityType](attacker);
+        }
+    }
+
+    /**
+     * 红色刀特殊能力 - 狂暴
+     */
+    redKnifeAbility(attacker) {
+        console.log('红色刀能力激活: 狂暴');
+        // 增加攻击速度或攻击力
+        attacker.attackPower *= 1.5;
+        // 效果持续一段时间后恢复
+        setTimeout(() => {
+            attacker.attackPower /= 1.5;
+            console.log('狂暴效果结束');
+        }, 5000);
+    }
+
+    /**
+     * 黄色刀特殊能力 - 穿透
+     */
+    yellowKnifeAbility(attacker) {
+        console.log('黄色刀能力激活: 穿透');
+        // 攻击可以穿透多个目标
+        // 实现逻辑将在后续任务中完善
+    }
+
+    /**
+     * 蓝色刀特殊能力 - 冰冻
+     */
+    blueKnifeAbility(attacker) {
+        console.log('蓝色刀能力激活: 冰冻');
+        // 减速或冰冻目标
+        // 实现逻辑将在后续任务中完善
+    }
+
+    /**
+     * 重置战斗系统
+     */
     reset() {
-        // 战斗系统无状态，不需要重置
+        this.comboCount = 0;
+        this.lastComboTime = 0;
+        this.config.comboMultiplier = 1.0;
+        console.log('战斗系统已重置');
+    }
+
+    /**
+     * 获取当前连击信息
+     */
+    getComboInfo() {
+        return {
+            count: this.comboCount,
+            multiplier: this.config.comboMultiplier,
+            timeout: this.comboTimeout - (Date.now() - this.lastComboTime)
+        };
     }
 }

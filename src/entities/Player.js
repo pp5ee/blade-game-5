@@ -1,196 +1,245 @@
-// 玩家控制逻辑类
-class Player {
-    constructor(map, config) {
-        this.map = map;
-        this.config = config;
+/**
+ * 转刀刀游戏 - 玩家角色
+ * 负责玩家控制、移动和状态管理
+ */
 
-        // 玩家位置
-        this.position = this.getRandomSpawnPosition();
+export class Player {
+    constructor(game, x, y) {
+        this.game = game;
+        this.x = x;
+        this.y = y;
+        this.width = 30;
+        this.height = 30;
 
-        // 玩家状态
-        this.knives = { red: 0, yellow: 0, blue: 0 };
+        // 玩家属性
+        this.speed = 5;
+        this.maxHp = 100;
+        this.hp = this.maxHp;
         this.isAlive = true;
 
-        // 键盘控制状态
-        this.keys = {
-            up: false,
-            down: false,
-            left: false,
-            right: false
+        // 刀收集状态
+        this.knives = {
+            red: 0,
+            yellow: 0,
+            blue: 0
         };
 
-        // 绑定键盘事件
-        this.bindKeyboardEvents();
+        // 移动状态
+        this.moving = false;
+        this.direction = { x: 0, y: 0 };
 
-        console.log('玩家初始化完成');
+        // 视觉效果
+        this.color = '#06d6a0';
+        this.hitEffect = 0;
+
+        console.log('玩家角色初始化完成');
     }
 
-    getRandomSpawnPosition() {
-        const emptyPositions = [];
-
-        for (let y = 0; y < this.config.mapSize.height; y++) {
-            for (let x = 0; x < this.config.mapSize.width; x++) {
-                if (this.map[y][x] === 0) { // 可通行区域
-                    emptyPositions.push({ x, y });
-                }
-            }
-        }
-
-        return emptyPositions.length > 0
-            ? emptyPositions[Math.floor(Math.random() * emptyPositions.length)]
-            : { x: 1, y: 1 }; // 默认位置
-    }
-
-    bindKeyboardEvents() {
-        document.addEventListener('keydown', (event) => {
-            switch(event.key) {
-                case 'ArrowUp':
-                case 'w':
-                case 'W':
-                    this.keys.up = true;
-                    break;
-                case 'ArrowDown':
-                case 's':
-                case 'S':
-                    this.keys.down = true;
-                    break;
-                case 'ArrowLeft':
-                case 'a':
-                case 'A':
-                    this.keys.left = true;
-                    break;
-                case 'ArrowRight':
-                case 'd':
-                case 'D':
-                    this.keys.right = true;
-                    break;
-            }
-        });
-
-        document.addEventListener('keyup', (event) => {
-            switch(event.key) {
-                case 'ArrowUp':
-                case 'w':
-                case 'W':
-                    this.keys.up = false;
-                    break;
-                case 'ArrowDown':
-                case 's':
-                case 'S':
-                    this.keys.down = false;
-                    break;
-                case 'ArrowLeft':
-                case 'a':
-                case 'A':
-                    this.keys.left = false;
-                    break;
-                case 'ArrowRight':
-                case 'd':
-                case 'D':
-                    this.keys.right = false;
-                    break;
-            }
-        });
-    }
-
-    update() {
+    /**
+     * 更新玩家状态
+     */
+    update(deltaTime) {
         if (!this.isAlive) return;
 
-        let newX = this.position.x;
-        let newY = this.position.y;
+        this.handleInput();
+        this.move(deltaTime);
+        this.checkBoundaries();
+        this.updateHitEffect();
+    }
 
-        // 处理移动输入
-        if (this.keys.up && newY > 0) {
-            newY--;
+    /**
+     * 处理键盘输入
+     */
+    handleInput() {
+        const keys = this.game.keys;
+
+        // 重置移动状态
+        this.direction.x = 0;
+        this.direction.y = 0;
+        this.moving = false;
+
+        // 水平移动
+        if (keys['KeyA'] || keys['ArrowLeft']) {
+            this.direction.x = -1;
+            this.moving = true;
         }
-        if (this.keys.down && newY < this.config.mapSize.height - 1) {
-            newY++;
-        }
-        if (this.keys.left && newX > 0) {
-            newX--;
-        }
-        if (this.keys.right && newX < this.config.mapSize.width - 1) {
-            newX++;
+        if (keys['KeyD'] || keys['ArrowRight']) {
+            this.direction.x = 1;
+            this.moving = true;
         }
 
-        // 检查移动是否有效（不在障碍物上）
-        if (this.isValidMove(newX, newY)) {
-            this.position.x = newX;
-            this.position.y = newY;
+        // 垂直移动
+        if (keys['KeyW'] || keys['ArrowUp']) {
+            this.direction.y = -1;
+            this.moving = true;
+        }
+        if (keys['KeyS'] || keys['ArrowDown']) {
+            this.direction.y = 1;
+            this.moving = true;
+        }
+
+        // 对角线移动速度修正
+        if (this.direction.x !== 0 && this.direction.y !== 0) {
+            this.direction.x *= 0.707;
+            this.direction.y *= 0.707;
         }
     }
 
-    isValidMove(x, y) {
-        // 检查边界
-        if (x < 0 || x >= this.config.mapSize.width ||
-            y < 0 || y >= this.config.mapSize.height) {
-            return false;
+    /**
+     * 移动玩家
+     */
+    move(deltaTime) {
+        if (this.moving) {
+            this.x += this.direction.x * this.speed * (deltaTime * 60);
+            this.y += this.direction.y * this.speed * (deltaTime * 60);
         }
-
-        // 检查障碍物
-        return this.map[y][x] === 0;
     }
 
-    collectKnife(color) {
-        if (this.knives.hasOwnProperty(color)) {
-            this.knives[color]++;
+    /**
+     * 检查边界
+     */
+    checkBoundaries() {
+        // 左边界
+        if (this.x < 0) {
+            this.x = 0;
+        }
+
+        // 右边界
+        if (this.x + this.width > this.game.config.canvasWidth) {
+            this.x = this.game.config.canvasWidth - this.width;
+        }
+
+        // 上边界
+        if (this.y < 0) {
+            this.y = 0;
+        }
+
+        // 下边界
+        if (this.y + this.height > this.game.config.canvasHeight) {
+            this.y = this.game.config.canvasHeight - this.height;
+        }
+    }
+
+    /**
+     * 更新受击效果
+     */
+    updateHitEffect() {
+        if (this.hitEffect > 0) {
+            this.hitEffect -= 0.1;
+        }
+    }
+
+    /**
+     * 收集刀
+     */
+    collectKnife(knifeType) {
+        if (this.knives.hasOwnProperty(knifeType)) {
+            this.knives[knifeType]++;
 
             // 更新UI显示
-            this.updateUI();
+            this.game.uiSystem.updateKnifeStats();
+
+            console.log(`收集到 ${knifeType}刀，当前数量: ${this.knives[knifeType]}`);
 
             return true;
         }
         return false;
     }
 
-    updateUI() {
-        // 更新刀数量显示
-        const redKnivesElem = document.getElementById('red-knives');
-        const yellowKnivesElem = document.getElementById('yellow-knives');
-        const blueKnivesElem = document.getElementById('blue-knives');
+    /**
+     * 受到伤害
+     */
+    takeDamage(damage) {
+        if (!this.isAlive) return;
 
-        if (redKnivesElem) redKnivesElem.textContent = this.knives.red;
-        if (yellowKnivesElem) yellowKnivesElem.textContent = this.knives.yellow;
-        if (blueKnivesElem) blueKnivesElem.textContent = this.knives.blue;
+        this.hp -= damage;
+        this.hitEffect = 1;
+
+        // 触发受击效果
+        if (this.hp <= 0) {
+            this.hp = 0;
+            this.isAlive = false;
+            console.log('玩家被击败！');
+        }
+
+        // 更新UI显示
+        this.game.uiSystem.updatePlayerStats();
+
+        return this.isAlive;
     }
 
-    getTotalKnives() {
-        return this.knives.red + this.knives.yellow + this.knives.blue;
+    /**
+     * 获取总攻击力加成
+     */
+    getTotalDamageBonus() {
+        let bonus = 0;
+        bonus += this.knives.red * 0.15;    // 红刀 +15%
+        bonus += this.knives.yellow * 0.25; // 黄刀 +25%
+        bonus += this.knives.blue * 0.35;   // 蓝刀 +35%
+        return bonus;
     }
 
-    getAttackPower() {
-        // 根据刀颜色计算攻击力：红=黄×2=蓝×4
-        return (this.knives.red || 0) * 4 + (this.knives.yellow || 0) * 2 + (this.knives.blue || 0);
+    /**
+     * 重置玩家状态
+     */
+    reset() {
+        this.hp = this.maxHp;
+        this.isAlive = true;
+        this.knives = { red: 0, yellow: 0, blue: 0 };
+        this.hitEffect = 0;
     }
 
-    getRandomSpawnPosition() {
-        if (!this.map) return { x: 0, y: 0 };
+    /**
+     * 渲染玩家
+     */
+    render(ctx) {
+        // 受击效果闪烁
+        if (this.hitEffect > 0) {
+            ctx.fillStyle = `rgba(255, 100, 100, ${this.hitEffect})`;
+        } else {
+            ctx.fillStyle = this.color;
+        }
 
-        const emptyPositions = [];
-        for (let y = 0; y < this.map.length; y++) {
-            for (let x = 0; x < this.map[0].length; x++) {
-                if (this.map[y][x] === 0) { // 可通行区域
-                    emptyPositions.push({ x, y });
-                }
+        // 绘制玩家主体
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+
+        // 绘制玩家眼睛（表示方向）
+        ctx.fillStyle = '#ffffff';
+        const eyeSize = 6;
+        const eyeOffset = 8;
+
+        // 根据移动方向调整眼睛位置
+        let eyeX1 = this.x + eyeOffset;
+        let eyeY1 = this.y + eyeOffset;
+        let eyeX2 = this.x + this.width - eyeOffset - eyeSize;
+        let eyeY2 = this.y + eyeOffset;
+
+        if (this.moving) {
+            if (this.direction.x > 0) {
+                eyeX1 += 2;
+                eyeX2 += 2;
+            } else if (this.direction.x < 0) {
+                eyeX1 -= 2;
+                eyeX2 -= 2;
+            }
+
+            if (this.direction.y > 0) {
+                eyeY1 += 2;
+                eyeY2 += 2;
+            } else if (this.direction.y < 0) {
+                eyeY1 -= 2;
+                eyeY2 -= 2;
             }
         }
 
-        return emptyPositions.length > 0
-            ? emptyPositions[Math.floor(Math.random() * emptyPositions.length)]
-            : { x: 0, y: 0 };
-    }
+        ctx.fillRect(eyeX1, eyeY1, eyeSize, eyeSize);
+        ctx.fillRect(eyeX2, eyeY2, eyeSize, eyeSize);
 
-    updateUI() {
-        // UI更新逻辑 - 委托给GameUI类
-        if (window.gameUI) {
-            window.gameUI.updatePlayerStats(this);
+        // 调试模式显示碰撞框
+        if (this.game.state === 'debug') {
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(this.x, this.y, this.width, this.height);
         }
-    }
-
-    reset() {
-        this.position = this.getRandomSpawnPosition();
-        this.knives = { red: 0, yellow: 0, blue: 0 };
-        this.isAlive = true;
-        this.updateUI();
     }
 }

@@ -1,5 +1,6 @@
-/* 转刀刀游戏 - 增强像素风格CSS */
+/* 转刀刀游戏 - 像素风格CSS样式 */
 
+/* 基础重置和字体设置 */
 * {
     margin: 0;
     padding: 0;
@@ -7,178 +8,193 @@
 }
 
 body {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-    color: #e6e6e6;
     font-family: 'Courier New', monospace;
+    background: #1a1a2e;
+    color: #ffffff;
+    line-height: 1.6;
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
     min-height: 100vh;
     padding: 20px;
-    background-attachment: fixed;
 }
 
-.game-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    max-width: 800px;
-    width: 100%;
-    background: rgba(26, 26, 46, 0.9);
-    padding: 20px;
-    border-radius: 8px;
-}
-
-.game-header {
-    text-align: center;
-    padding: 15px;
-    background: linear-gradient(145deg, #16213e, #0f3460);
+/* 像素风格通用类 */
+.pixel-border {
     border: 4px solid #333;
-    border-radius: 0;
-    width: 100%;
+    border-image:
+        linear-gradient(45deg, #666 25%, transparent 25%, transparent 75%, #666 75%, #666),
+        linear-gradient(45deg, #666 25%, transparent 25%, transparent 75%, #666 75%, #666);
+    border-image-slice: 4;
+    border-image-width: 4px;
+}
+
+.pixel-shadow {
     box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
 }
 
-h1 {
-    color: #e94560;
-    font-size: 3rem;
-    text-shadow: 3px 3px 0 #000, 6px 6px 0 rgba(0, 0, 0, 0.2);
-    margin-bottom: 15px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
+.pixel-text {
+    text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
+    letter-spacing: 1px;
 }
 
-.game-description {
-    color: #ffd166;
-    font-size: 1rem;
-    line-height: 1.4;
-    text-shadow: 1px 1px 0 #000;
-    font-weight: bold;
-}
-
-#game-canvas {
-    border: 6px solid #333;
+/* 游戏容器 */
+.game-container {
+    max-width: 900px;
+    background: #16213e;
+    border: 4px solid #0f3460;
     border-radius: 0;
-    background-color: #0d1930;
+    overflow: hidden;
+}
+
+/* 游戏头部 */
+.game-header {
+    background: linear-gradient(135deg, #e94560, #d63447);
+    padding: 20px;
+    text-align: center;
+    border-bottom: 4px solid #0f3460;
+}
+
+.game-title {
+    font-size: 2.5em;
+    font-weight: bold;
+    text-shadow: 3px 3px 0px #0f3460;
+    margin: 0;
+    letter-spacing: 2px;
+}
+
+.game-subtitle {
+    font-size: 1.1em;
+    margin-top: 10px;
+    opacity: 0.9;
+}
+
+/* 游戏状态显示 */
+.game-status {
+    text-align: center;
+    padding: 10px;
+    background: #e94560;
+    color: white;
+    font-weight: bold;
+    border-bottom: 4px solid #0f3460;
+}
+
+/* 游戏画布 */
+#game-canvas {
+    display: block;
+    background: #0f3460;
+    border: 4px solid #e94560;
+    margin: 20px auto;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
-    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
 }
 
-.game-ui {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 20px;
-    width: 100%;
-    background: linear-gradient(145deg, #16213e, #0f3460);
-    padding: 20px;
-    border: 4px solid #333;
-    border-radius: 0;
-    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
-}
-
-.stat-panel {
-    background: #1a1a2e;
-    padding: 15px;
-    border: 3px solid #333;
-    border-radius: 0;
-    text-align: center;
-    box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
-}
-
-.stat-label {
-    color: #ffd166;
-    font-size: 0.9rem;
-    margin-bottom: 10px;
-    text-transform: uppercase;
-    font-weight: bold;
-    text-shadow: 1px 1px 0 #000;
-}
-
-.stat-value {
-    color: #e94560;
-    font-size: 1.4rem;
-    font-weight: bold;
-    text-shadow: 1px 1px 0 #000;
-}
-
-.knife-counts {
+/* 游戏信息面板 */
+.game-info {
     display: flex;
-    flex-direction: column;
+    justify-content: space-around;
+    padding: 15px;
+    background: #0f3460;
+    border-top: 4px solid #e94560;
+    flex-wrap: wrap;
     gap: 10px;
 }
 
+.info-panel {
+    text-align: center;
+    padding: 10px;
+    background: #16213e;
+    border: 2px solid #e94560;
+    min-width: 120px;
+    flex: 1;
+}
+
+.info-label {
+    font-size: 0.9em;
+    opacity: 0.8;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+}
+
+.info-value {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #e94560;
+}
+
+/* 刀收集样式 */
 .knife-count {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 5px 10px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 2px solid #333;
+    gap: 8px;
+    margin: 5px 0;
+    justify-content: center;
 }
 
 .knife-color {
-    width: 25px;
-    height: 25px;
-    border-radius: 0;
-    margin-right: 10px;
-    border: 2px solid #000;
-    box-shadow: 1px 1px 0px rgba(255, 255, 255, 0.2);
+    width: 16px;
+    height: 16px;
+    border: 2px solid #fff;
+    border-radius: 2px;
 }
 
+.red-knife { background: #e94560; }
+.yellow-knife { background: #ffd166; }
+.blue-knife { background: #118ab2; }
+
 .knife-label {
-    color: #8d93ab;
-    font-size: 0.9rem;
-    flex-grow: 1;
+    font-size: 0.9em;
+    opacity: 0.9;
 }
 
 .knife-value {
+    font-weight: bold;
     color: #e94560;
-    font-size: 1.2rem;
-    font-weight: bold;
-    text-shadow: 1px 1px 0 #000;
+    min-width: 20px;
+    text-align: center;
 }
 
-.red { background-color: #e94560; }
-.yellow { background-color: #ffd166; }
-.blue { background-color: #118ab2; }
-
-.controls {
+/* 游戏控制按钮 */
+.game-controls {
     display: flex;
-    gap: 10px;
-    margin-top: 10px;
+    justify-content: center;
+    gap: 20px;
+    padding: 20px;
+    background: #16213e;
+    border-top: 4px solid #0f3460;
+    flex-wrap: wrap;
 }
 
-button {
-    background: linear-gradient(145deg, #e94560, #d63447);
+.control-button {
+    background: linear-gradient(135deg, #e94560, #d63447);
+    border: 3px solid #0f3460;
     color: white;
-    border: 3px solid #333;
-    padding: 10px 20px;
-    border-radius: 0;
-    cursor: pointer;
+    padding: 12px 24px;
     font-family: 'Courier New', monospace;
+    font-size: 1.1em;
     font-weight: bold;
+    cursor: pointer;
     text-transform: uppercase;
-    box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
     transition: all 0.1s;
+    min-width: 120px;
 }
 
-button:hover {
+.control-button:hover {
     transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
+    box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
 }
 
-button:active {
-    transform: translate(3px, 3px);
+.control-button:active {
+    transform: translate(4px, 4px);
     box-shadow: none;
 }
 
-button:disabled {
-    background: linear-gradient(145deg, #8d93ab, #7a7f94);
+.control-button:disabled {
+    background: #8d93ab;
     cursor: not-allowed;
     transform: none;
-    box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
 }
 
 .instructions {
