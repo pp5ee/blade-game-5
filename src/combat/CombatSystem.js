@@ -19,13 +19,24 @@ class CombatSystem {
 
     // 解析战斗结果
     resolveCombat(attacker, defender) {
-        if (!attacker.isAlive || !defender.isAlive) {
-            return { winner: null, damage: 0, critical: false };
+        if (!attacker || !defender || !attacker.isAlive || !defender.isAlive) {
+            console.log('战斗无效：至少一方已死亡或不存在');
+            return {
+                winner: null,
+                damage: 0,
+                critical: false,
+                attackerPower: 0,
+                defenderPower: 0,
+                attackerDamage: 0,
+                defenderDamage: 0
+            };
         }
 
         // 计算双方攻击力
         const attackerPower = this.calculateAttackPower(attacker);
         const defenderPower = this.calculateAttackPower(defender);
+
+        console.log(`战斗开始 - 攻击方力量: ${attackerPower}, 防御方力量: ${defenderPower}`);
 
         // 计算伤害
         const attackerDamage = this.calculateDamage(attackerPower, defenderPower);
@@ -35,29 +46,62 @@ class CombatSystem {
         let winner = null;
         let damageDealt = 0;
         let criticalHit = false;
+        let playerWon = false;
 
         if (attackerDamage > defenderDamage) {
             winner = 'attacker';
             damageDealt = attackerDamage - defenderDamage;
             criticalHit = this.isCriticalHit(attackerPower, defenderPower);
+            playerWon = (attacker === window.knifeGame?.player);
+
+            // 应用伤害结果
+            if (defender === window.knifeGame?.player) {
+                // 玩家被攻击
+                console.log(`玩家受到 ${damageDealt} 点伤害`);
+                if (criticalHit) console.log('暴击！');
+            } else {
+                // NPC被攻击
+                console.log(`NPC被击败，掉落刀`);
+            }
+
         } else if (defenderDamage > attackerDamage) {
             winner = 'defender';
             damageDealt = defenderDamage - attackerDamage;
             criticalHit = this.isCriticalHit(defenderPower, attackerPower);
+            playerWon = (defender === window.knifeGame?.player);
+
+            // 应用伤害结果
+            if (attacker === window.knifeGame?.player) {
+                // 玩家攻击失败
+                console.log(`玩家攻击失败，受到 ${damageDealt} 点反击伤害`);
+            } else {
+                // NPC攻击失败
+                console.log(`NPC攻击失败`);
+            }
+
         } else {
             // 平局，双方都不获胜
             winner = 'draw';
+            console.log('战斗平局');
         }
 
-        return {
+        const result = {
             winner: winner,
             damage: damageDealt,
             critical: criticalHit,
+            playerWon: playerWon,
             attackerPower: attackerPower,
             defenderPower: defenderPower,
             attackerDamage: attackerDamage,
             defenderDamage: defenderDamage
         };
+
+        // 显示战斗信息
+        if (window.gameUI) {
+            window.gameUI.showCombatInfo(attacker, defender, result);
+        }
+
+        return result;
     }
 
     // 计算实体攻击力（带伤害衰减）

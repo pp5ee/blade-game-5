@@ -225,29 +225,51 @@ class Game {
     }
 
     checkCombat() {
-        if (!this.player || !this.combatSystem) return;
+        if (!this.player || !this.combatSystem || !this.player.isAlive) return;
 
         // 检查玩家与NPC的战斗
-        this.npcs.forEach((npc, index) => {
+        for (let i = this.npcs.length - 1; i >= 0; i--) {
+            const npc = this.npcs[i];
+
             if (npc && npc.position && this.player.position &&
                 npc.position.x === this.player.position.x &&
-                npc.position.y === this.player.position.y) {
+                npc.position.y === this.player.position.y &&
+                npc.isAlive) {
 
+                console.log('战斗开始：玩家 vs NPC');
                 const result = this.combatSystem.resolveCombat(this.player, npc);
 
-                if (result.playerWon) {
+                if (result.winner === 'attacker' && result.playerWon) {
                     // 玩家获胜，获得NPC的刀
-                    this.player.knives = { ...this.player.knives, ...npc.knives };
-                    this.npcs.splice(index, 1);
+                    for (const color in npc.knives) {
+                        if (npc.knives.hasOwnProperty(color)) {
+                            this.player.knives[color] += npc.knives[color];
+                        }
+                    }
+                    npc.isAlive = false;
+                    this.npcs.splice(i, 1);
                     console.log('玩家击败NPC，获得战利品');
-                } else {
+
+                    // 更新UI
+                    if (window.gameUI) {
+                        window.gameUI.updatePlayerStats(this.player);
+                    }
+
+                } else if (result.winner === 'defender' && !result.playerWon) {
                     // NPC获胜，游戏结束
+                    this.player.isAlive = false;
                     this.gameState = 'gameOver';
                     this.stop();
                     console.log('游戏结束：玩家被击败');
+
+                    // 更新UI显示游戏结束
+                    if (window.gameUI) {
+                        window.gameUI.updateGameStatus('游戏结束 - 你被击败了！');
+                    }
+                    break;
                 }
             }
-        });
+        }
 
         // 如果NPC数量不足，补充生成
         if (this.npcs.length < this.config.dynamicDifficulty.minNPCs) {
@@ -404,4 +426,3 @@ class Game {
     }
 }
 
-export { Game };

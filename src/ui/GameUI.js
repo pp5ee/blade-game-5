@@ -104,11 +104,21 @@ class GameUI {
 
     // 显示战斗信息
     showCombatInfo(attacker, defender, result) {
+        if (!this.game) return;
+
         const combatLog = this.formatCombatLog(attacker, defender, result);
         console.log('战斗信息:', combatLog);
 
-        // 可以在这里添加战斗动画或特效
+        // 更新游戏状态显示
+        this.updateGameStatus(this.getStatusText());
+
+        // 显示战斗动画
         this.showCombatAnimation(result);
+
+        // 更新刀数量显示
+        if (this.game.player) {
+            this.updatePlayerStats(this.game.player);
+        }
     }
 
     formatCombatLog(attacker, defender, result) {
@@ -172,6 +182,28 @@ class GameUI {
 
         // 可以在这里添加更复杂的提示显示逻辑
         // 例如在屏幕上显示浮动提示文字
+    }
+
+    // 更新玩家统计数据
+    updatePlayerStats(player) {
+        if (!player) return;
+
+        // 更新刀数量显示
+        this.updateKnifeCounts(player.knives.red, player.knives.yellow, player.knives.blue);
+
+        // 更新总刀数
+        const totalKnivesElem = document.getElementById('total-knives');
+        if (totalKnivesElem) {
+            totalKnivesElem.textContent = player.getTotalKnives();
+        }
+
+        // 更新击败NPC数量
+        const defeatedNpcsElem = document.getElementById('defeated-npcs');
+        if (defeatedNpcsElem && this.game) {
+            const initialNpcs = this.game.config?.maxNPCs || 5;
+            const currentNpcs = this.game.npcs?.length || 0;
+            defeatedNpcsElem.textContent = Math.max(0, initialNpcs - currentNpcs);
+        }
     }
 
     // 重置UI
