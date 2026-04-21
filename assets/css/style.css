@@ -1,4 +1,4 @@
-/* 转刀刀游戏 - 像素风格CSS */
+/* 转刀刀游戏 - 增强像素风格CSS */
 
 * {
     margin: 0;
@@ -7,7 +7,7 @@
 }
 
 body {
-    background-color: #1a1a2e;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
     color: #e6e6e6;
     font-family: 'Courier New', monospace;
     display: flex;
@@ -15,6 +15,7 @@ body {
     align-items: center;
     min-height: 100vh;
     padding: 20px;
+    background-attachment: fixed;
 }
 
 .game-container {
@@ -24,86 +25,119 @@ body {
     gap: 20px;
     max-width: 800px;
     width: 100%;
+    background: rgba(26, 26, 46, 0.9);
+    padding: 20px;
+    border-radius: 8px;
 }
 
 .game-header {
     text-align: center;
-    padding: 10px;
-    background: #16213e;
-    border: 2px solid #0f3460;
-    border-radius: 8px;
+    padding: 15px;
+    background: linear-gradient(145deg, #16213e, #0f3460);
+    border: 4px solid #333;
+    border-radius: 0;
     width: 100%;
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
 }
 
 h1 {
     color: #e94560;
-    font-size: 2.5rem;
-    text-shadow: 2px 2px 0 #000;
-    margin-bottom: 10px;
+    font-size: 3rem;
+    text-shadow: 3px 3px 0 #000, 6px 6px 0 rgba(0, 0, 0, 0.2);
+    margin-bottom: 15px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
 }
 
 .game-description {
-    color: #8d93ab;
-    font-size: 0.9rem;
+    color: #ffd166;
+    font-size: 1rem;
     line-height: 1.4;
+    text-shadow: 1px 1px 0 #000;
+    font-weight: bold;
 }
 
 #game-canvas {
-    border: 4px solid #0f3460;
-    border-radius: 4px;
+    border: 6px solid #333;
+    border-radius: 0;
     background-color: #0d1930;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
 }
 
 .game-ui {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 15px;
+    gap: 20px;
     width: 100%;
-    background: #16213e;
-    padding: 15px;
-    border: 2px solid #0f3460;
-    border-radius: 8px;
+    background: linear-gradient(145deg, #16213e, #0f3460);
+    padding: 20px;
+    border: 4px solid #333;
+    border-radius: 0;
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
 }
 
 .stat-panel {
     background: #1a1a2e;
-    padding: 10px;
-    border: 1px solid #e94560;
-    border-radius: 4px;
+    padding: 15px;
+    border: 3px solid #333;
+    border-radius: 0;
     text-align: center;
+    box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
 }
 
 .stat-label {
-    color: #8d93ab;
-    font-size: 0.8rem;
-    margin-bottom: 5px;
+    color: #ffd166;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    font-weight: bold;
+    text-shadow: 1px 1px 0 #000;
 }
 
 .stat-value {
     color: #e94560;
-    font-size: 1.2rem;
+    font-size: 1.4rem;
     font-weight: bold;
+    text-shadow: 1px 1px 0 #000;
 }
 
 .knife-counts {
     display: flex;
-    justify-content: space-around;
-    gap: 5px;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .knife-count {
     display: flex;
-    flex-direction: column;
     align-items: center;
+    justify-content: space-between;
+    padding: 5px 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid #333;
 }
 
 .knife-color {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    margin-bottom: 5px;
+    width: 25px;
+    height: 25px;
+    border-radius: 0;
+    margin-right: 10px;
+    border: 2px solid #000;
+    box-shadow: 1px 1px 0px rgba(255, 255, 255, 0.2);
+}
+
+.knife-label {
+    color: #8d93ab;
+    font-size: 0.9rem;
+    flex-grow: 1;
+}
+
+.knife-value {
+    color: #e94560;
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-shadow: 1px 1px 0 #000;
 }
 
 .red { background-color: #e94560; }
@@ -117,37 +151,52 @@ h1 {
 }
 
 button {
-    background: #e94560;
+    background: linear-gradient(145deg, #e94560, #d63447);
     color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
+    border: 3px solid #333;
+    padding: 10px 20px;
+    border-radius: 0;
     cursor: pointer;
     font-family: 'Courier New', monospace;
     font-weight: bold;
+    text-transform: uppercase;
+    box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
+    transition: all 0.1s;
 }
 
 button:hover {
-    background: #d63447;
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
+}
+
+button:active {
+    transform: translate(3px, 3px);
+    box-shadow: none;
 }
 
 button:disabled {
-    background: #8d93ab;
+    background: linear-gradient(145deg, #8d93ab, #7a7f94);
     cursor: not-allowed;
+    transform: none;
+    box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
 }
 
 .instructions {
-    background: #16213e;
-    padding: 15px;
-    border: 2px solid #0f3460;
-    border-radius: 8px;
+    background: linear-gradient(145deg, #16213e, #0f3460);
+    padding: 20px;
+    border: 4px solid #333;
+    border-radius: 0;
     font-size: 0.9rem;
     line-height: 1.4;
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
 }
 
 .instructions h3 {
-    color: #e94560;
-    margin-bottom: 10px;
+    color: #ffd166;
+    margin-bottom: 15px;
+    text-align: center;
+    text-transform: uppercase;
+    text-shadow: 1px 1px 0 #000;
 }
 
 .instructions ul {
@@ -156,8 +205,14 @@ button:disabled {
 }
 
 .instructions li {
-    margin-bottom: 5px;
+    margin-bottom: 8px;
     color: #8d93ab;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.instructions li:last-child {
+    border-bottom: none;
 }
 
 .game-status {
@@ -172,6 +227,80 @@ button:disabled {
 .status-playing { background: #118ab2; color: white; }
 .status-game-over { background: #e94560; color: white; }
 .status-won { background: #06d6a0; color: white; }
+
+/* 新增像素风格元素样式 */
+.status-indicator {
+    padding: 12px 24px;
+    border: 4px solid #333;
+    background: linear-gradient(145deg, #16213e, #0f3460);
+    color: #e94560;
+    font-weight: bold;
+    text-align: center;
+    box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
+    text-transform: uppercase;
+    text-shadow: 1px 1px 0 #000;
+    font-size: 1.1rem;
+}
+
+.player-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+.stat-name {
+    color: #8d93ab;
+    font-size: 0.9rem;
+}
+
+.game-log {
+    background: linear-gradient(145deg, #16213e, #0f3460);
+    padding: 15px;
+    border: 4px solid #333;
+    border-radius: 0;
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
+    width: 100%;
+}
+
+.game-log h4 {
+    color: #ffd166;
+    margin-bottom: 10px;
+    text-align: center;
+    text-transform: uppercase;
+    text-shadow: 1px 1px 0 #000;
+}
+
+.log-content {
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid #333;
+    padding: 10px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.log-entry {
+    color: #8d93ab;
+    font-size: 0.8rem;
+    margin-bottom: 5px;
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
 
 /* 响应式设计 */
 @media (max-width: 768px) {
