@@ -1,5 +1,4 @@
 // 游戏主循环和状态管理类
-import { OptimizationManager } from '../performance/OptimizationManager.js';
 
 class Game {
     constructor() {
