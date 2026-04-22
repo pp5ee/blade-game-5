@@ -69,9 +69,12 @@
             width: 100%;
             height: 600px;
             background: #0f3460;
-            border: 2px solid #06d6a0;
-            border-radius: 10px;
+            border: 4px solid #e94560;
+            border-radius: 0;
             cursor: crosshair;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
         }
 
         .game-status {
@@ -95,30 +98,40 @@
         }
 
         .control-btn {
-            background: #e94560;
-            border: 2px solid #000;
+            background: linear-gradient(135deg, #e94560, #d63447);
+            border: 3px solid #0f3460;
             color: white;
-            padding: 8px 16px;
+            padding: 12px 24px;
             font-family: 'Courier New', monospace;
             font-size: 14px;
             font-weight: bold;
             cursor: pointer;
             image-rendering: pixelated;
-            box-shadow: 2px 2px 0px #000;
+            box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
             text-transform: uppercase;
             letter-spacing: 1px;
+            font-smooth: never;
+            -webkit-font-smoothing: none;
+            transition: all 0.1s;
         }
 
         .control-btn:hover:not(:disabled) {
-            background: #ff6b95;
-            transform: translate(1px, 1px);
-            box-shadow: 1px 1px 0px #000;
+            background: linear-gradient(135deg, #ff6b95, #e94560);
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-btn:active:not(:disabled) {
+            transform: translate(4px, 4px);
+            box-shadow: none;
         }
 
         .control-btn:disabled {
             background: #666;
             cursor: not-allowed;
             opacity: 0.6;
+            transform: none;
+            box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
         }
 
         .game-stats {

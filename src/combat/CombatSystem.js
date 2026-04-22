@@ -26,51 +26,40 @@ export class CombatSystem {
 
     /**
      * 计算伤害
+     * 按照原始规格：战斗基于刀的数量和颜色等级计算伤害
      */
     calculateDamage(attacker, target, knifeType = null) {
-        let damage = this.config.baseDamage;
+        // 基础伤害为10
+        let damage = 10;
 
-        // 根据攻击者属性调整伤害
-        if (attacker.attackPower) {
-            damage *= (attacker.attackPower / 10);
-        }
-
-        // 根据刀类型调整伤害
+        // 根据刀类型应用伤害梯度：红色刀=黄色刀×2=蓝色刀×4
         if (knifeType) {
             damage *= this.getKnifeMultiplier(knifeType);
         }
 
-        // 连击加成
-        damage *= this.config.comboMultiplier;
-
-        // 暴击判定
-        if (Math.random() < this.config.criticalChance) {
-            damage *= this.config.criticalMultiplier;
-            console.log('暴击！伤害翻倍');
-        }
-
-        // 闪避判定
-        if (Math.random() < this.config.dodgeChance) {
-            console.log(`${target.constructor.name} 闪避了攻击！`);
-            return 0;
+        // 根据收集的刀数量增加伤害（每把刀增加1点伤害）
+        if (attacker.knives) {
+            const totalKnives = attacker.knives.red + attacker.knives.yellow + attacker.knives.blue;
+            damage += totalKnives;
         }
 
         // 确保最小伤害
         damage = Math.max(1, Math.round(damage));
 
-        console.log(`造成 ${damage} 点伤害`);
+        console.log(`造成 ${damage} 点伤害（刀类型: ${knifeType || '无'}）`);
         return damage;
     }
 
     /**
      * 根据刀类型获取伤害倍率
      * 按照原始规格：红色刀伤害=黄色刀×2=蓝色刀×4
+     * 修正为：蓝色刀=1x，黄色刀=2x，红色刀=4x
      */
     getKnifeMultiplier(knifeType) {
         const multiplierMap = {
-            red: 4.0,    // 红色刀：4倍伤害
-            yellow: 2.0, // 黄色刀：2倍伤害
-            blue: 1.0    // 蓝色刀：基础伤害
+            blue: 1.0,    // 蓝色刀：基础伤害
+            yellow: 2.0,  // 黄色刀：2倍伤害
+            red: 4.0     // 红色刀：4倍伤害
         };
         return multiplierMap[knifeType] || 1.0;
     }

@@ -180,6 +180,17 @@ export class Player {
     }
 
     /**
+     * 获取总攻击力加成
+     */
+    getTotalDamageBonus() {
+        let bonus = 0;
+        bonus += this.knives.red * 0.15;    // 红刀 +15%
+        bonus += this.knives.yellow * 0.25; // 黄刀 +25%
+        bonus += this.knives.blue * 0.35;   // 蓝刀 +35%
+        return bonus;
+    }
+
+    /**
      * 重置玩家状态
      */
     reset() {

@@ -27,15 +27,49 @@ body {
         linear-gradient(45deg, #666 25%, transparent 25%, transparent 75%, #666 75%, #666);
     border-image-slice: 4;
     border-image-width: 4px;
+    image-rendering: pixelated;
 }
 
 .pixel-shadow {
     box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
+    image-rendering: pixelated;
 }
 
 .pixel-text {
     text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
     letter-spacing: 1px;
+    image-rendering: pixelated;
+    font-smooth: never;
+    -webkit-font-smoothing: none;
+}
+
+/* 像素艺术按钮样式 */
+.pixel-button {
+    background: linear-gradient(135deg, #e94560, #d63447);
+    border: 3px solid #0f3460;
+    color: white;
+    padding: 12px 24px;
+    font-family: 'Courier New', monospace;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
+    transition: all 0.1s;
+    min-width: 120px;
+    image-rendering: pixelated;
+    font-smooth: never;
+    -webkit-font-smoothing: none;
+}
+
+.pixel-button:hover {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+}
+
+.pixel-button:active {
+    transform: translate(4px, 4px);
+    box-shadow: none;
 }
 
 /* 游戏容器 */

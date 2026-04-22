@@ -6,7 +6,9 @@
   "scripts": {
     "start": "python3 -m http.server 8080",
     "serve": "npx http-server . -p 8080",
-    "test": "echo \"打开 tests/test-functionality.html 进行功能测试\" && exit 0"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "keywords": [
     "html5",
@@ -23,7 +25,12 @@
     "url": "https://github.com/username/knife-throwing-game.git"
   },
   "homepage": "./",
-  "devDependencies": {},
+  "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.2",
+    "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0"
+  },
   "browserslist": [
     "> 1%",
     "last 2 versions",

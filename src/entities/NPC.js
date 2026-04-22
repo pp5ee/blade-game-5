@@ -114,36 +114,40 @@ export class NPC {
 
     /**
      * 更新AI行为
+     * 按照原始规格：NPC会主动向玩家移动并攻击
      */
     updateAI() {
-        // 每5秒有30%概率改变状态
-        if (this.stateTimer >= this.stateChangeInterval) {
-            if (Math.random() < 0.3) {
-                this.changeState();
-            }
-            this.stateTimer = 0;
-        }
-
         // 生命值低于25%时逃跑
         if (this.hp / this.maxHp < 0.25 && this.state !== 'flee') {
             this.state = 'flee';
             return;
         }
 
-        // 根据当前状态执行行为
-        switch (this.state) {
-            case 'wander':
-                this.wanderBehavior();
-                break;
-            case 'chase':
-                this.chaseBehavior();
-                break;
-            case 'attack':
-                this.attackBehavior();
-                break;
-            case 'flee':
-                this.fleeBehavior();
-                break;
+        // 如果正在逃跑且生命值恢复，返回攻击状态
+        if (this.state === 'flee' && this.hp / this.maxHp > 0.5) {
+            this.state = 'attack';
+        }
+
+        // 主动检测玩家位置并决定行为
+        const player = this.game.player;
+        if (!player || !player.isAlive) {
+            this.wanderBehavior();
+            return;
+        }
+
+        // 计算与玩家的距离
+        const dx = player.x + player.width / 2 - (this.x + this.width / 2);
+        const dy = player.y + player.height / 2 - (this.y + this.height / 2);
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // NPC始终主动追逐玩家，除非正在逃跑
+        if (this.state === 'flee') {
+            this.fleeBehavior();
+        } else if (distance <= this.attackRange) {
+            this.attackBehavior();
+        } else {
+            // 始终追逐玩家，无论距离多远
+            this.chaseBehavior();
         }
     }
 
@@ -232,7 +236,7 @@ export class NPC {
     fleeBehavior() {
         const player = this.game.player;
         if (!player || !player.isAlive) {
-            this.state = 'wander';
+            this.state = 'attack';
             return;
         }
 
@@ -247,9 +251,40 @@ export class NPC {
             this.direction.y = -dy / distance;
         }
 
-        // 生命值恢复后停止逃跑
+        // 生命值恢复后返回攻击状态
         if (this.hp / this.maxHp > 0.5) {
-            this.state = 'wander';
+            this.state = 'attack';
+        }
+    }
+
+    /**
+     * 寻找玩家行为
+     * NPC会主动向玩家大致方向移动
+     */
+    seekPlayerBehavior() {
+        const player = this.game.player;
+        if (!player || !player.isAlive) {
+            this.wanderBehavior();
+            return;
+        }
+
+        // 计算大致朝向玩家的方向（添加一些随机性）
+        const dx = player.x + player.width / 2 - (this.x + this.width / 2);
+        const dy = player.y + player.height / 2 - (this.y + this.height / 2);
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance > 0) {
+            // 添加一些随机性使NPC移动更自然
+            const randomX = (Math.random() * 0.4 - 0.2);
+            const randomY = (Math.random() * 0.4 - 0.2);
+
+            this.direction.x = (dx / distance) + randomX;
+            this.direction.y = (dy / distance) + randomY;
+        }
+
+        // 每2秒微调方向
+        if (this.moveTimer >= this.moveInterval) {
+            this.moveTimer = 0;
         }
     }
 

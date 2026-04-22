@@ -189,16 +189,20 @@ export class UISystem {
     }
 
     /**
-     * 渲染生命值条
+     * 渲染生命值条（像素艺术风格）
      */
     renderHealthBar(ctx, player) {
         const barWidth = 200;
-        const barHeight = 20;
+        const barHeight = 16;
         const barX = 10;
         const barY = 10;
 
+        // 像素风格边框
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
+
         // 背景
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillStyle = '#333333';
         ctx.fillRect(barX, barY, barWidth, barHeight);
 
         // 生命值填充
@@ -216,51 +220,64 @@ export class UISystem {
         ctx.fillStyle = barColor;
         ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
 
-        // 边框
+        // 像素风格内边框
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 1;
         ctx.strokeRect(barX, barY, barWidth, barHeight);
 
-        // 文本
+        // 像素风格文本
         ctx.fillStyle = '#ffffff';
-        ctx.font = '14px Courier New';
-        ctx.fillText(`HP: ${player.hp}/${player.maxHp}`, barX + 5, barY + 14);
+        ctx.font = 'bold 12px Courier New';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`HP: ${player.hp}/${player.maxHp}`, barX + 5, barY + barHeight / 2);
+        ctx.textBaseline = 'alphabetic';
     }
 
     /**
-     * 渲染刀状态
+     * 渲染刀状态（像素艺术风格）
      */
     renderKnifeStatus(ctx, player) {
         const startX = 10;
-        const startY = 40;
-        const iconSize = 15;
-        const spacing = 25;
+        const startY = 35;
+        const iconSize = 12;
+        const spacing = 20;
 
-        ctx.font = '12px Courier New';
-        ctx.fillStyle = '#ffffff';
+        // 像素风格字体
+        ctx.font = 'bold 10px Courier New';
+        ctx.textBaseline = 'middle';
 
         // 红刀
         ctx.fillStyle = '#e94560';
         ctx.fillRect(startX, startY, iconSize, iconSize);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(startX, startY, iconSize, iconSize);
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(`x${player.knives.red}`, startX + iconSize + 5, startY + 12);
+        ctx.fillText(`x${player.knives.red}`, startX + iconSize + 5, startY + iconSize / 2);
 
         // 黄刀
         ctx.fillStyle = '#ffd166';
         ctx.fillRect(startX, startY + spacing, iconSize, iconSize);
+        ctx.strokeStyle = '#ffffff';
+        ctx.strokeRect(startX, startY + spacing, iconSize, iconSize);
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(`x${player.knives.yellow}`, startX + iconSize + 5, startY + spacing + 12);
+        ctx.fillText(`x${player.knives.yellow}`, startX + iconSize + 5, startY + spacing + iconSize / 2);
 
         // 蓝刀
         ctx.fillStyle = '#118ab2';
         ctx.fillRect(startX, startY + spacing * 2, iconSize, iconSize);
+        ctx.strokeStyle = '#ffffff';
+        ctx.strokeRect(startX, startY + spacing * 2, iconSize, iconSize);
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(`x${player.knives.blue}`, startX + iconSize + 5, startY + spacing * 2 + 12);
+        ctx.fillText(`x${player.knives.blue}`, startX + iconSize + 5, startY + spacing * 2 + iconSize / 2);
 
-        // 总加成
+        // 总加成（像素风格显示）
         const totalBonus = player.getTotalDamageBonus();
         ctx.fillStyle = '#06d6a0';
+        ctx.font = 'bold 10px Courier New';
         ctx.fillText(`攻击加成: +${(totalBonus * 100).toFixed(0)}%`, startX, startY + spacing * 3 + 5);
+
+        ctx.textBaseline = 'alphabetic';
     }
 
     /**
@@ -291,24 +308,29 @@ export class UISystem {
     }
 
     /**
-     * 渲染游戏结束屏幕
+     * 渲染游戏结束屏幕（像素艺术风格）
      */
     renderGameOverScreen(ctx) {
-        // 半透明背景
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        // 像素风格半透明背景
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
         ctx.fillRect(0, 0, this.game.config.canvasWidth, this.game.config.canvasHeight);
 
-        // 标题
+        // 像素风格边框
+        ctx.strokeStyle = this.game.state === 'won' ? '#06d6a0' : '#e94560';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(100, 150, this.game.config.canvasWidth - 200, this.game.config.canvasHeight - 300);
+
+        // 标题（像素风格字体）
         ctx.fillStyle = this.game.state === 'won' ? '#06d6a0' : '#e94560';
-        ctx.font = 'bold 48px Courier New';
+        ctx.font = 'bold 36px Courier New';
         ctx.textAlign = 'center';
 
         const title = this.game.state === 'won' ? '恭喜获胜！' : '游戏结束';
-        ctx.fillText(title, this.game.config.canvasWidth / 2, this.game.config.canvasHeight / 2 - 50);
+        ctx.fillText(title, this.game.config.canvasWidth / 2, 220);
 
-        // 统计信息
+        // 统计信息（像素风格）
         ctx.fillStyle = '#ffffff';
-        ctx.font = '24px Courier New';
+        ctx.font = 'bold 18px Courier New';
 
         const stats = [
             `击败NPC: ${this.game.stats.defeatedNpcs}`,
@@ -318,13 +340,13 @@ export class UISystem {
         ];
 
         stats.forEach((stat, index) => {
-            ctx.fillText(stat, this.game.config.canvasWidth / 2, this.game.config.canvasHeight / 2 + index * 30);
+            ctx.fillText(stat, this.game.config.canvasWidth / 2, 280 + index * 30);
         });
 
-        // 提示
-        ctx.font = '18px Courier New';
+        // 提示（像素风格）
+        ctx.font = 'bold 14px Courier New';
         ctx.fillStyle = '#ffd166';
-        ctx.fillText('按 R 键重新开始', this.game.config.canvasWidth / 2, this.game.config.canvasHeight / 2 + 150);
+        ctx.fillText('按 R 键重新开始', this.game.config.canvasWidth / 2, this.game.config.canvasHeight - 100);
 
         ctx.textAlign = 'left';
     }

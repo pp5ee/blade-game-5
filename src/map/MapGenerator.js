@@ -73,60 +73,95 @@ export class MapGenerator {
 
     /**
      * 生成障碍物
+     * 改进为更真实的随机障碍物生成，避免过度聚集
      */
     generateObstacles() {
         const totalCells = this.mapData.gridWidth * this.mapData.gridHeight;
         const obstacleCount = Math.floor(totalCells * this.config.obstacleDensity);
 
         this.obstacles = [];
+        const playerStartPos = this.getPlayerStartPosition();
+        const gridPlayerX = Math.floor(playerStartPos.x / this.config.gridSize);
+        const gridPlayerY = Math.floor(playerStartPos.y / this.config.gridSize);
 
-        for (let i = 0; i < obstacleCount; i++) {
+        let attempts = 0;
+        const maxAttempts = obstacleCount * 2;
+
+        while (this.obstacles.length < obstacleCount && attempts < maxAttempts) {
             const x = Math.floor(Math.random() * this.mapData.gridWidth);
             const y = Math.floor(Math.random() * this.mapData.gridHeight);
 
-            // 跳过玩家安全区域
-            const playerStartPos = this.getPlayerStartPosition();
-            const distance = Math.sqrt(
-                Math.pow(x * this.config.gridSize - playerStartPos.x, 2) +
-                Math.pow(y * this.config.gridSize - playerStartPos.y, 2)
+            // 计算与玩家的网格距离
+            const gridDistance = Math.sqrt(
+                Math.pow(x - gridPlayerX, 2) + Math.pow(y - gridPlayerY, 2)
             );
 
-            if (distance > this.config.safeZoneRadius) {
-                this.mapData.grid[y][x].isObstacle = true;
-                this.obstacles.push({
-                    x: x * this.config.gridSize,
-                    y: y * this.config.gridSize,
-                    width: this.config.gridSize,
-                    height: this.config.gridSize
-                });
+            // 确保安全区域（玩家周围3格内无障碍物）
+            if (gridDistance > 3 && !this.mapData.grid[y][x].isObstacle) {
+                // 检查周围是否有障碍物（避免过度聚集）
+                const hasNearbyObstacle = this.checkNearbyObstacles(x, y, 2);
+
+                if (!hasNearbyObstacle) {
+                    this.mapData.grid[y][x].isObstacle = true;
+                    this.obstacles.push({
+                        x: x * this.config.gridSize,
+                        y: y * this.config.gridSize,
+                        width: this.config.gridSize,
+                        height: this.config.gridSize
+                    });
+                }
             }
+
+            attempts++;
         }
 
-        console.log(`生成了 ${this.obstacles.length} 个障碍物`);
+        console.log(`生成了 ${this.obstacles.length} 个障碍物（尝试次数: ${attempts}）`);
+    }
+
+    /**
+     * 检查周围是否有障碍物
+     */
+    checkNearbyObstacles(x, y, radius) {
+        for (let dy = -radius; dy <= radius; dy++) {
+            for (let dx = -radius; dx <= radius; dx++) {
+                const nx = x + dx;
+                const ny = y + dy;
+
+                if (nx >= 0 && nx < this.mapData.gridWidth &&
+                    ny >= 0 && ny < this.mapData.gridHeight) {
+                    if (this.mapData.grid[ny][nx].isObstacle) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     /**
      * 生成地形
+     * 改进为使用简单的噪声算法生成更自然的地形分布
      */
     generateTerrain() {
         const gridWidth = this.mapData.gridWidth;
         const gridHeight = this.mapData.gridHeight;
 
-        // 使用Perlin噪声生成地形（简化版）
+        // 使用简单的噪声生成更自然的地形
         for (let y = 0; y < gridHeight; y++) {
             for (let x = 0; x < gridWidth; x++) {
-                // 简单的随机地形生成
-                const noiseValue = Math.random();
+                // 使用改进的噪声算法
+                const noiseValue = this.getNoiseValue(x, y, gridWidth, gridHeight);
 
-                if (noiseValue < 0.6) {
-                    this.mapData.grid[y][x].terrainType = 'grass';
-                } else if (noiseValue < 0.8) {
-                    this.mapData.grid[y][x].terrainType = 'dirt';
-                } else if (noiseValue < 0.95) {
-                    this.mapData.grid[y][x].terrainType = 'stone';
+                // 根据地形成型分布
+                if (noiseValue < 0.5) {
+                    this.mapData.grid[y][x].terrainType = 'grass'; // 草地占50%
+                } else if (noiseValue < 0.7) {
+                    this.mapData.grid[y][x].terrainType = 'dirt';  // 泥土占20%
+                } else if (noiseValue < 0.9) {
+                    this.mapData.grid[y][x].terrainType = 'stone'; // 石头占20%
                 } else {
-                    this.mapData.grid[y][x].terrainType = 'water';
-                    this.mapData.grid[y][x].isObstacle = true; // 水是障碍物
+                    this.mapData.grid[y][x].terrainType = 'water'; // 水占10%
+                    this.mapData.grid[y][x].isObstacle = true;     // 水是障碍物
                 }
 
                 // 记录地形信息
@@ -141,6 +176,23 @@ export class MapGenerator {
         }
 
         console.log('地形生成完成');
+    }
+
+    /**
+     * 获取噪声值（简化版Perlin噪声替代）
+     */
+    getNoiseValue(x, y, width, height) {
+        // 使用简单的多频率噪声来生成更自然的地形
+        const frequency1 = 0.1;
+        const frequency2 = 0.05;
+        const frequency3 = 0.02;
+
+        const noise1 = Math.sin(x * frequency1 + y * frequency1) * 0.5 + 0.5;
+        const noise2 = Math.sin(x * frequency2 + y * frequency2) * 0.3 + 0.3;
+        const noise3 = Math.sin(x * frequency3 + y * frequency3) * 0.2 + 0.2;
+
+        // 混合不同频率的噪声
+        return (noise1 * 0.5 + noise2 * 0.3 + noise3 * 0.2) + Math.random() * 0.1;
     }
 
     /**
