@@ -63,7 +63,7 @@ export class Knife {
         this.color = knifeType.color;
         this.glowColor = this.lightenColor(knifeType.color, 0.3);
         this.name = knifeType.name;
-        this.damageBonus = knifeType.damageBonus;
+        this.damageMultiplier = knifeType.damageMultiplier;
     }
 
     /**
@@ -281,7 +281,7 @@ export class Knife {
         return {
             type: this.type,
             name: knifeType.name,
-            damageBonus: knifeType.damageBonus,
+            damageMultiplier: knifeType.damageMultiplier,
             rarity: knifeType.rarity,
             color: knifeType.color
         };

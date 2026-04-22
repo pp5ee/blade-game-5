@@ -169,25 +169,34 @@ export class Player {
     }
 
     /**
-     * 获取总攻击力加成
+     * 获取总攻击力加成（基于刀颜色和数量）
+     * 按照计划要求：红色刀伤害=黄色刀×2=蓝色刀×4
      */
     getTotalDamageBonus() {
-        let bonus = 0;
-        bonus += this.knives.red * 0.15;    // 红刀 +15%
-        bonus += this.knives.yellow * 0.25; // 黄刀 +25%
-        bonus += this.knives.blue * 0.35;   // 蓝刀 +35%
-        return bonus;
+        // 按照计划要求：红刀=4倍，黄刀=2倍，蓝刀=1倍
+        const redMultiplier = 4;    // 红刀伤害倍率
+        const yellowMultiplier = 2; // 黄刀伤害倍率
+        const blueMultiplier = 1;   // 蓝刀伤害倍率
+
+        // 计算总伤害倍率
+        const totalMultiplier = (this.knives.red * redMultiplier) +
+                               (this.knives.yellow * yellowMultiplier) +
+                               (this.knives.blue * blueMultiplier);
+
+        // 返回倍率（1表示无加成，2表示2倍伤害等）
+        return Math.max(1, totalMultiplier);
     }
 
     /**
-     * 获取总攻击力加成
+     * 获取刀颜色伤害加成描述
      */
-    getTotalDamageBonus() {
-        let bonus = 0;
-        bonus += this.knives.red * 0.15;    // 红刀 +15%
-        bonus += this.knives.yellow * 0.25; // 黄刀 +25%
-        bonus += this.knives.blue * 0.35;   // 蓝刀 +35%
-        return bonus;
+    getKnifeDamageDescription() {
+        return {
+            red: this.knives.red * 4,
+            yellow: this.knives.yellow * 2,
+            blue: this.knives.blue * 1,
+            total: this.getTotalDamageBonus()
+        };
     }
 
     /**

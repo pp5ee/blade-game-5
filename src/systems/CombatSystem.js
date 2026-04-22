@@ -63,14 +63,16 @@ export class CombatSystem {
     }
 
     /**
-     * 计算玩家伤害
+     * 计算玩家伤害（基于刀颜色和数量）
+     * 按照计划要求：战斗基于刀的数量和颜色等级计算伤害
      */
     calculatePlayerDamage(player) {
+        // 基础伤害
         let damage = this.config.playerBaseDamage;
 
-        // 刀加成
-        const knifeBonus = player.getTotalDamageBonus();
-        damage *= (1 + knifeBonus);
+        // 刀颜色和数量加成（直接使用倍率，而不是百分比加成）
+        const knifeMultiplier = player.getTotalDamageBonus();
+        damage *= knifeMultiplier;
 
         // 暴击判定
         if (Math.random() < this.config.criticalChance) {
@@ -82,10 +84,17 @@ export class CombatSystem {
     }
 
     /**
-     * 计算NPC伤害
+     * 计算NPC伤害（基于NPC收集的刀）
+     * NPC也使用刀颜色和数量计算伤害
      */
     calculateNpcDamage(npc) {
+        // 基础伤害
         let damage = npc.damage;
+
+        // NPC收集的刀加成（使用与玩家相同的倍率系统）
+        const knifeCount = npc.getKnifeCount();
+        const knifeMultiplier = (knifeCount.red * 4) + (knifeCount.yellow * 2) + (knifeCount.blue * 1);
+        damage *= Math.max(1, knifeMultiplier);
 
         // 根据NPC类型调整伤害
         switch (npc.type) {
@@ -163,28 +172,36 @@ export class CombatSystem {
     }
 
     /**
-     * 显示伤害数字（可选功能）
+     * 显示伤害数字和刀加成信息
      */
     showDamageNumbers(player, npc, playerDamage, npcDamage) {
-        // 这里可以添加伤害数字显示效果
-        // 例如：创建漂浮的伤害数字文本
-
+        // 显示伤害数字效果
         if (this.game.state === 'debug') {
-            console.log(`玩家对NPC造成 ${playerDamage} 点伤害`);
-            console.log(`NPC对玩家造成 ${npcDamage} 点伤害`);
+            const playerKnifeDesc = player.getKnifeDamageDescription();
+            const npcKnifeCount = npc.getKnifeCount();
+            const npcKnifeMultiplier = (npcKnifeCount.red * 4) + (npcKnifeCount.yellow * 2) + (npcKnifeCount.blue * 1);
+
+            console.log(`玩家伤害: ${playerDamage} (红刀×${playerKnifeDesc.red} + 黄刀×${playerKnifeDesc.yellow} + 蓝刀×${playerKnifeDesc.blue} = 总倍率×${playerKnifeDesc.total})`);
+            console.log(`NPC伤害: ${npcDamage} (红刀×${npcKnifeCount.red} + 黄刀×${npcKnifeCount.yellow} + 蓝刀×${npcKnifeCount.blue} = 总倍率×${npcKnifeMultiplier})`);
         }
+
+        // 这里可以添加视觉伤害数字显示效果
+        // 例如：创建漂浮的伤害数字文本
     }
 
     /**
-     * 获取战斗统计信息
+     * 获取战斗统计信息（显示刀颜色加成）
      */
     getCombatStats() {
         const player = this.game.player;
         if (!player) return null;
 
+        const knifeDesc = player.getKnifeDamageDescription();
+
         return {
             baseDamage: this.config.playerBaseDamage,
-            totalBonus: player.getTotalDamageBonus(),
+            knifeMultiplier: knifeDesc.total,
+            knifeDetails: knifeDesc,
             criticalChance: this.config.criticalChance,
             criticalMultiplier: this.config.criticalMultiplier,
             estimatedDamage: this.calculatePlayerDamage(player)
